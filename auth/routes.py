@@ -49,8 +49,12 @@ def login():
             return render_template("login.html", form=form)
 
         # --- Brute-force lockout check ---
-        if user.locked_until and datetime.utcnow() < user.locked_until:
-            remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+        locked_until = user.locked_until
+        if locked_until and locked_until.tzinfo is not None:
+            locked_until = locked_until.replace(tzinfo=None)
+
+        if locked_until and datetime.utcnow() < locked_until:
+            remaining = int((locked_until - datetime.utcnow()).total_seconds() / 60) + 1
             flash(
                 f"Account locked due to too many failed attempts. "
                 f"Try again in {remaining} minute(s).",
