@@ -48,40 +48,13 @@ def login():
             flash("Your account has been deactivated. Contact admin.", "danger")
             return render_template("login.html", form=form)
 
-        # --- Brute-force lockout check ---
-        locked_until = user.locked_until
-        if locked_until and locked_until.tzinfo is not None:
-            locked_until = locked_until.replace(tzinfo=None)
-
-        if locked_until and datetime.utcnow() < locked_until:
-            remaining = int((locked_until - datetime.utcnow()).total_seconds() / 60) + 1
-            flash(
-                f"Account locked due to too many failed attempts. "
-                f"Try again in {remaining} minute(s).",
-                "danger",
-            )
-            return render_template("login.html", form=form)
-
         # --- Password check ---
         password_correct = bcrypt.checkpw(
             password.encode("utf-8"), user.password_hash.encode("utf-8")
         )
 
         if not password_correct:
-            user.failed_login_count = (user.failed_login_count or 0) + 1
-            if user.failed_login_count >= LOCKOUT_ATTEMPTS:
-                user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
-                flash(
-                    f"Too many failed attempts. Account locked for {LOCKOUT_MINUTES} minutes.",
-                    "danger",
-                )
-            else:
-                remaining_attempts = LOCKOUT_ATTEMPTS - user.failed_login_count
-                flash(
-                    f"Invalid password. {remaining_attempts} attempt(s) remaining before lockout.",
-                    "danger",
-                )
-            db.session.commit()
+            flash("Invalid username or password.", "danger")
             return render_template("login.html", form=form)
 
         # --- Success ---
