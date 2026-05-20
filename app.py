@@ -17,6 +17,10 @@ def create_app(config_name: str = None) -> Flask:
 
     app = Flask(__name__)
 
+    # Trust Render's load balancer for HTTPS / Secure cookies
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     # ── Configuration ──────────────────────────────────────────────────────
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "development")
