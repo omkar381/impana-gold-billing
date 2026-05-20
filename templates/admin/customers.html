@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Customers - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Customers</h1>
+    <form method="get" class="filter-bar">
+      <input class="input" type="text" name="q" value="{{ q or '' }}" placeholder="Search by name or phone">
+      <button class="btn btn-secondary" type="submit">Search</button>
+    </form>
+  </div>
+
+  <div class="admin-grid">
+    <div class="card">
+      <h2>Add Customer</h2>
+      <form method="post" action="{{ url_for('admin.add_customer') }}" class="form-grid">
+        {{ form.hidden_tag() }}
+        <label>
+          <span>Name</span>
+          {{ form.name(class="input") }}
+        </label>
+        <label>
+          <span>Phone</span>
+          {{ form.phone(class="input") }}
+        </label>
+        <label>
+          <span>Address</span>
+          {{ form.address(class="input") }}
+        </label>
+        <label>
+          <span>GSTIN</span>
+          {{ form.gstin(class="input") }}
+        </label>
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Customer List</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Total Bills</th>
+              <th>Total Spent</th>
+              <th>Last Visit</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in customers %}
+              <tr>
+                <td>{{ row.customer.name }}</td>
+                <td>{{ row.customer.phone or '-' }}</td>
+                <td>{{ row.bill_count }}</td>
+                <td>Rs. {{ '%.2f'|format(row.total_spent or 0) }}</td>
+                <td>{{ row.last_visit.strftime('%d-%m-%Y') if row.last_visit else '-' }}</td>
+                <td class="row-actions">
+                  <a class="btn btn-link" href="{{ url_for('admin.customer_detail', customer_id=row.customer.id) }}">View</a>
+                  <form method="post" action="{{ url_for('admin.delete_customer', customer_id=row.customer.id) }}" class="inline-form" data-confirm="Delete this customer?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">No customers found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

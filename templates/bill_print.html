@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ bill.bill_number }} — Tax Invoice</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+</head>
+
+<body>
+
+  {# ── VARIABLES ─────────────────────────────────────────────── #}
+  {% set shop_name = settings.get('shop_name', 'Impana Gold') %}
+  {% set tagline = settings.get('tagline', '') %}
+  {% set gstin = settings.get('gstin', '') %}
+  {% set fssai = settings.get('fssai', '') %}
+  {% set iso_cert = settings.get('iso_certification', '') %}
+  {% set state_code = settings.get('state_code', '') %}
+  {% set logo_path = settings.get('logo_path') %}
+  {% set fssai_logo = settings.get('fssai_logo_path') %}
+  {% set iso_logo = settings.get('iso_logo_path') %}
+  {% set other_cert_logo = settings.get('other_cert_logo_path') %}
+  {% set bill_date = bill.bill_date.strftime('%d-%b-%Y') %}
+  {% set bill_time = bill.bill_date.strftime('%H:%M') %}
+  {% set gst_amount = bill.gst_amount or 0 %}
+  {% set cgst = gst_amount / 2 %}
+  {% set sgst = gst_amount / 2 %}
+  {% set bank_name = settings.get('bank_name', '') %}
+  {% set bank_branch = settings.get('bank_branch', '') %}
+  {% set bank_account = settings.get('bank_account', '') %}
+  {% set bank_ifsc = settings.get('bank_ifsc', '') %}
+  {% set upi_id = settings.get('upi_id', '') %}
+  {% set has_bank = bank_name or bank_account %}
+  {% set terms = settings.get('terms_conditions', '') %}
+  {% set declaration = settings.get('declaration', 'Certified that the particulars given above are true and correct.')
+  %}
+  {% set sig_name = settings.get('signature_name', 'For ' + shop_name) %}
+  {% set seller_state = settings.get('state_code', '') %}
+  {% set buyer_state = '' %}
+  {% if bill.customer and bill.customer.state_code %}{% set buyer_state = bill.customer.state_code %}{% endif %}
+  {% set is_igst = seller_state != buyer_state and buyer_state != '' %}
+
+  <div class="a5-sheet">
+    {% for copy_label in ['ORIGINAL', 'DUPLICATE'] %}
+    {% if not loop.first %}
+    <div class="cut-line"><span>✂ cut here</span></div>
+    {% endif %}
+    <div class="invoice-page">
+      <div class="invoice">
+
+        {# ── ROW 1: HEADER ───────────────────────────────────────── #}
+        <div class="inv-header">
+
+          <div class="inv-header-left">
+            <div class="shop-title-row">
+              <div>
+                <div class="shop-name">{{ shop_name }}</div>
+                <div class="shop-subtitle">M/S Sri Devi Industries</div>
+                {% if tagline %}<div class="shop-tagline">{{ tagline }}</div>{% endif %}
+              </div>
+              {% if fssai_logo or iso_logo or other_cert_logo %}
+              <div class="cert-row">
+                {% if fssai_logo %}<img src="{{ url_for('static', filename=fssai_logo) }}" alt="FSSAI"
+                  class="cert-img">{% endif %}
+                {% if iso_logo %}<img src="{{ url_for('static', filename=iso_logo) }}" alt="ISO" class="cert-img">{%
+                endif %}
+                {% if other_cert_logo %}<img src="{{ url_for('static', filename=other_cert_logo) }}" alt="Cert"
+                  class="cert-img">{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="shop-address">
+              {% if settings.get('address_line1') %}{{ settings.get('address_line1') }},{% endif %}
+              {% if settings.get('address_line2') %} {{ settings.get('address_line2') }},{% endif %}
+              {{ settings.get('city','') }}{% if settings.get('state') %}, {{ settings.get('state') }}{% endif %}{% if
+              settings.get('pincode') %} – {{ settings.get('pincode') }}{% endif %}
+            </div>
+          </div>
+
+          <div class="inv-header-right">
+            {% if logo_path %}
+            <img src="{{ url_for('static', filename=logo_path) }}" alt="Logo" class="brand-logo-xl">
+            {% endif %}
+            <div class="contact-lines">
+              {% if settings.get('phone2') %}📞 {{ settings.get('phone2') }}<br>{% elif settings.get('phone') and
+              settings.get('phone') != '9243251111' %}📞 {{ settings.get('phone') }}<br>{% endif %}
+              {% if settings.get('website') %}🌐 {{ settings.get('website') }}<br>{% endif %}
+              {% if settings.get('email') %}✉ {{ settings.get('email') }}{% endif %}
+            </div>
+          </div>
+
+        </div>{# end inv-header #}
+
+        {# ── ROW 2: GSTIN BAR ─────────────────────────────────────── #}
+        <div class="title-bar">
+          <div class="title-left">
+            {% if gstin %}<strong>GSTIN:</strong> {{ gstin }}{% endif %}
+            {% if fssai %} &nbsp;|&nbsp; <strong>FSSAI:</strong> {{ fssai }}{% endif %}
+            {% if iso_cert %} &nbsp;|&nbsp; <strong>ISO:</strong> {{ iso_cert }}{% endif %}
+          </div>
+          <div class="title-center">TAX INVOICE</div>
+          <div class="title-right">{{ copy_label }}</div>
+        </div>
+
+        {# ── ROW 3: CUSTOMER + INVOICE META ──────────────────────── #}
+        <table class="meta-grid">
+          <tr>
+            <td class="meta-col-left">
+              <div class="meta-heading">Customer Detail</div>
+              <table class="detail-table">
+                <tr>
+                  <td class="dt-label">M/S</td>
+                  <td class="dt-value"><strong>{{ bill.customer.name if bill.customer else 'Walk-in Customer'
+                      }}</strong></td>
+                </tr>
+                {% if bill.customer and bill.customer.address %}
+                <tr>
+                  <td class="dt-label">Address</td>
+                  <td class="dt-value">{{ bill.customer.address }}</td>
+                </tr>
+                {% endif %}
+                {% if bill.customer and bill.customer.phone %}
+                <tr>
+                  <td class="dt-label">Phone</td>
+                  <td class="dt-value">{{ bill.customer.phone }}</td>
+                </tr>
+                {% endif %}
+                {% if bill.customer and bill.customer.gstin %}
+                <tr>
+                  <td class="dt-label">GSTIN</td>
+                  <td class="dt-value">{{ bill.customer.gstin }}</td>
+                </tr>
+                {% endif %}
+                {% if state_code %}
+                <tr>
+                  <td class="dt-label">Place of Supply</td>
+                  <td class="dt-value">{{ settings.get('state','') }} ({{ state_code }})</td>
+                </tr>
+                {% endif %}
+              </table>
+            </td>
+            <td class="meta-col-right">
+              <div class="meta-heading">Invoice Detail</div>
+              <table class="detail-table">
+                <tr>
+                  <td class="dt-label">Invoice No.</td>
+                  <td class="dt-value"><strong>{{ bill.bill_number }}</strong></td>
+                </tr>
+                <tr>
+                  <td class="dt-label">Date</td>
+                  <td class="dt-value">{{ bill_date }}</td>
+                </tr>
+                <tr>
+                  <td class="dt-label">Time</td>
+                  <td class="dt-value">{{ bill_time }}</td>
+                </tr>
+                <tr>
+                  <td class="dt-label">Payment</td>
+                  <td class="dt-value">{{ bill.payment_mode|upper }}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        {# ── ROW 4: LINE ITEMS ────────────────────────────────────── #}
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th class="c-sr">Sr.</th>
+              <th class="c-name">Product / Service</th>
+              <th class="c-hsn">HSN/SAC</th>
+              <th class="c-qty">Qty</th>
+              <th class="c-rate">Rate</th>
+              <th class="c-amount">Taxable Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set total_qty = namespace(val=0) %}
+            {% set total_taxable = namespace(val=0) %}
+            {% for item in bill.items %}
+            {% set total_qty.val = total_qty.val + item.qty|float %}
+            {% set total_taxable.val = total_taxable.val + item.line_total|float %}
+            <tr>
+              <td class="c-sr">{{ loop.index }}</td>
+              <td class="c-name">{{ item.product_name }}</td>
+              <td class="c-hsn">{{ item.hsn_code or '' }}</td>
+              <td class="c-qty">
+                {% if item.unit == 'kg' and item.qty|float >= 30 and item.qty|float % 30 == 0 %}
+                {{ '%g'|format(item.qty|float) }} PKT / 1KG
+                {% else %}
+                {{ '%g'|format(item.qty|float) }} {{ item.unit|upper }}
+                {% endif %}
+              </td>
+              <td class="c-rate">{{ '%.2f'|format(item.unit_price) }}</td>
+              <td class="c-amount">{{ '%.2f'|format(item.line_total) }}</td>
+            </tr>
+            {% endfor %}
+
+            {# Empty padding rows #}
+            {% if bill.items|length < 5 %} {% for i in range(5 - bill.items|length) %} <tr class="empty-row">
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              </tr>
+              {% endfor %}
+              {% endif %}
+
+              {# Subtotal #}
+              <tr class="subtotal-row">
+                <td colspan="5" style="text-align:right;padding-right:8px;"></td>
+                <td class="c-amount"><strong>{{ '%.2f'|format(total_taxable.val) }}</strong></td>
+              </tr>
+
+              {# GST lines #}
+              {% if gst_enabled and gst_amount > 0 %}
+              {% if is_igst %}
+              <tr class="tax-row">
+                <td colspan="5" style="text-align:right;padding-right:10px;"><strong>IGST</strong></td>
+                <td class="c-amount">{{ '%.2f'|format(gst_amount) }}</td>
+              </tr>
+              {% else %}
+              <tr class="tax-row">
+                <td colspan="5" style="text-align:right;padding-right:10px;"><strong>CGST</strong></td>
+                <td class="c-amount">{{ '%.2f'|format(cgst) }}</td>
+              </tr>
+              <tr class="tax-row">
+                <td colspan="5" style="text-align:right;padding-right:10px;"><strong>SGST</strong></td>
+                <td class="c-amount">{{ '%.2f'|format(sgst) }}</td>
+              </tr>
+              {% endif %}
+              {% endif %}
+
+              {% if bill.discount_amount and bill.discount_amount > 0 %}
+              <tr class="tax-row">
+                <td colspan="5" style="text-align:right;padding-right:10px;"><strong>Discount ({{ bill.discount_type
+                    }})</strong></td>
+                <td class="c-amount">(-) {{ '%.2f'|format(bill.discount_amount) }}</td>
+              </tr>
+              {% endif %}
+
+          </tbody>
+        </table>
+
+        {# ── ROW 5: GRAND TOTAL ────────────────────────────────────── #}
+        <table class="total-row-table">
+          <tr>
+            <td class="total-label"><strong>TOTAL</strong></td>
+            <td class="total-qty"><strong>{{ '%g'|format(total_qty.val) }} {{ bill.items[0].unit|upper if bill.items
+                else '' }}</strong></td>
+            <td class="total-amount">
+              <strong>₹ {{ '%.2f'|format(bill.grand_total) }}</strong>
+              <div class="eoe">(E &amp; O.E.)</div>
+            </td>
+          </tr>
+        </table>
+
+
+        {# ── ROW 8: FOOTER ─────────────────────────────────────────── #}
+        <table class="footer-grid">
+          <tr>
+            <td class="footer-left" valign="top">
+              {% if has_bank %}
+              <div class="footer-section-title">Bank Details</div>
+              <div class="bank-qr-row">
+                <table class="bank-tbl">
+                  <tr>
+                    <td class="bk-label">Bank</td>
+                    <td class="bk-value">STATE BANK OF INDIA</td>
+                  </tr>
+                  <tr>
+                    <td class="bk-label">Branch</td>
+                    <td class="bk-value">SUPER MARKET</td>
+                  </tr>
+                  <tr>
+                    <td class="bk-label">Acc. No.</td>
+                    <td class="bk-value">44941352398</td>
+                  </tr>
+                  <tr>
+                    <td class="bk-label">IFSC</td>
+                    <td class="bk-value">SBIN0003304</td>
+                  </tr>
+                  <tr>
+                    <td class="bk-label">UPI ID</td>
+                    <td class="bk-value">44941352398@sbi</td>
+                  </tr>
+                </table>
+                <div class="qr-placeholder">
+                  <img src="{{ url_for('static', filename='uploads/qr_code.png') }}" alt="UPI QR Code" class="qr-img">
+                </div>
+              </div>
+              {% endif %}
+              <div class="footer-section-title" style="margin-top:3px;">Terms &amp; Conditions</div>
+              <div class="terms-text">
+                1. Goods once sold will not be taken back.<br>
+                2. The goods are delivered in good condition to the satisfaction of the buyer/buyer's representative. We
+                are not responsible for any loss, shortage or damage in transit or of any kind whatsoever.<br>
+                3. Subject to local jurisdiction.
+              </div>
+              <div class="cust-sig">Customer Signature</div>
+            </td>
+
+            <td class="footer-right" valign="top">
+              <div class="declaration-text">{{ declaration }}</div>
+              <div class="company-sig">{{ sig_name }}</div>
+              <div class="auth-sig">
+                <div class="sig-line"></div>
+                <strong>Authorised Signatory</strong>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        {# ── ROW 9: PAYMENT STRIP ──────────────────────────────────── #}
+        <div class="payment-strip">
+          <span>Payment: <strong>{{ bill.payment_mode|upper }}</strong></span>
+          {% if bill.payment_mode|lower == 'credit' %}
+          <span>Paid: <strong>CREDIT</strong></span>
+          {% else %}
+          <span>Paid: <strong>₹ {{ '%.2f'|format(bill.amount_paid or 0) }}</strong></span>
+          {% if bill.change_returned and bill.change_returned > 0 %}
+          <span>Change: <strong>₹ {{ '%.2f'|format(bill.change_returned) }}</strong></span>
+          {% endif %}
+          {% endif %}
+          <span>🙏 Thank you for your business!</span>
+        </div>
+
+      </div>{# end .invoice #}
+    </div>{# end .invoice-page #}
+
+    {% endfor %}
+  </div>{# end .a5-sheet #}
+
+  {# ── SCREEN ACTION BAR ─────────────────────────────────────── #}
+  <div class="no-print action-bar">
+    <button onclick="window.print()" class="act-btn act-print">🖨&nbsp; Print Invoice</button>
+    <a href="/bill/{{ bill.id }}/pdf" class="act-btn act-pdf">📄&nbsp; Download PDF</a>
+    <a href="/" class="act-btn act-back">← Back to POS</a>
+  </div>
+
+  {% if auto_print %}
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () { window.print(); }, 600);
+    });
+  </script>
+  {% endif %}
+
+</body>
+
+</html>

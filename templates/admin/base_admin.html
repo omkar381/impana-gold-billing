@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Admin - Impana Gold{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="admin-body">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">Impana Gold</div>
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin.products') }}">Products</a>
+        <a href="{{ url_for('admin.bills') }}">Bills</a>
+        <a href="{{ url_for('admin.reports') }}">Reports</a>
+        <a href="{{ url_for('admin.gst_report') }}">GST Report</a>
+        <a href="{{ url_for('admin.customers') }}">Customers</a>
+        <a href="{{ url_for('admin.warehouse') }}">Warehouse</a>
+        <a href="{{ url_for('admin.settings') }}">Settings</a>
+        {% if current_user.is_authenticated and current_user.role == 'superadmin' %}
+          <a href="{{ url_for('admin.staff') }}">Staff</a>
+          <a href="{{ url_for('admin.audit_panel') }}">Audit</a>
+        {% endif %}
+      </nav>
+    </aside>
+
+    <div class="admin-shell">
+      <header class="admin-topbar">
+        <div class="admin-user">
+          {{ current_user.username }} ({{ current_user.role }})
+        </div>
+        <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Logout</a>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div class="flash-stack" data-flash-stack>
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% endwith %}
+
+      <main class="admin-main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

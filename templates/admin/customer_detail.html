@@ -1,0 +1,74 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Customer - {{ customer.name }}{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>{{ customer.name }}</h1>
+    <div class="header-actions">
+      <a class="btn btn-ghost" href="{{ url_for('admin.customers') }}">Back to customers</a>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <div class="card">
+      <h2>Edit Customer</h2>
+      <form method="post" action="{{ url_for('admin.edit_customer', customer_id=customer.id) }}" class="form-grid">
+        {{ form.hidden_tag() }}
+        <label>
+          <span>Name</span>
+          {{ form.name(class="input") }}
+        </label>
+        <label>
+          <span>Phone</span>
+          {{ form.phone(class="input") }}
+        </label>
+        <label>
+          <span>Address</span>
+          {{ form.address(class="input") }}
+        </label>
+        <label>
+          <span>GSTIN</span>
+          {{ form.gstin(class="input") }}
+        </label>
+        <button class="btn btn-primary" type="submit">Update</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Summary</h2>
+      <div class="summary-block">
+        <div class="summary-row"><span>Total Bills</span><span>{{ bill_count }}</span></div>
+        <div class="summary-row"><span>Total Spent</span><span>Rs. {{ '%.2f'|format(total_spent or 0) }}</span></div>
+      </div>
+
+      <h3>Bill History</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Bill No</th>
+              <th>Date</th>
+              <th>Grand Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for bill in bills %}
+              <tr>
+                <td><a href="{{ url_for('admin.bill_detail', bill_id=bill.id) }}">{{ bill.bill_number }}</a></td>
+                <td>{{ bill.bill_date.strftime('%d-%m-%Y') }}</td>
+                <td>Rs. {{ '%.2f'|format(bill.grand_total) }}</td>
+                <td>{{ bill.status }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4">No bills yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Bill {{ bill.bill_number }} - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Bill {{ bill.bill_number }}</h1>
+    <div class="header-actions">
+      <a class="btn btn-ghost" target="_blank" href="{{ url_for('billing.print_bill', bill_id=bill.id) }}">Print</a>
+      <a class="btn btn-secondary" href="{{ url_for('billing.download_pdf', bill_id=bill.id) }}">Download PDF</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="info-grid">
+      <div>
+        <div><strong>Date:</strong> {{ bill.bill_date.strftime('%d-%m-%Y %H:%M') }}</div>
+        <div><strong>Operator:</strong> {{ bill.operator.username if bill.operator else '' }}</div>
+        <div><strong>Status:</strong> {{ bill.status }}</div>
+      </div>
+      <div>
+        <div><strong>Customer:</strong> {{ bill.customer.name if bill.customer else 'Walk-in' }}</div>
+        <div><strong>Phone:</strong> {{ bill.customer.phone if bill.customer else '' }}</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>HSN</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Rate</th>
+            <th>GST%</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in bill.items %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ item.product_name }}</td>
+              <td>{{ item.hsn_code or '' }}</td>
+              <td>{{ '%.3f'|format(item.qty) }}</td>
+              <td>{{ item.unit }}</td>
+              <td>Rs. {{ '%.2f'|format(item.unit_price) }}</td>
+              <td>{{ '%.2f'|format(item.gst_rate or 0) }}</td>
+              <td>Rs. {{ '%.2f'|format(item.line_total) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-block">
+      <div class="summary-row"><span>Subtotal</span><span>Rs. {{ '%.2f'|format(bill.subtotal) }}</span></div>
+      {% if bill.discount_amount and bill.discount_amount > 0 %}
+        <div class="summary-row"><span>Discount</span><span>Rs. {{ '%.2f'|format(bill.discount_amount) }}</span></div>
+      {% endif %}
+      <div class="summary-row"><span>Taxable</span><span>Rs. {{ '%.2f'|format(bill.taxable_amount) }}</span></div>
+      {% if gst_enabled %}
+        <div class="summary-row"><span>GST</span><span>Rs. {{ '%.2f'|format(bill.gst_amount) }}</span></div>
+      {% endif %}
+      <div class="summary-row total"><span>Grand Total</span><span>Rs. {{ '%.2f'|format(bill.grand_total) }}</span></div>
+      <div class="summary-row"><span>Payment</span><span>{{ bill.payment_mode }}</span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

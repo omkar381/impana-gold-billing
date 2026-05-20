@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GST Report — {{ settings.get('shop_name', 'Impana Gold') }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+    @page {
+      size: A4 landscape;
+      margin: 12mm 10mm;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Outfit", "Segoe UI", Arial, sans-serif;
+      font-size: 8.5pt;
+      color: #1a1a2e;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── REPORT HEADER ── */
+    .rpt-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 2.5px solid #005f73;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .rpt-company-name {
+      font-size: 18pt;
+      font-weight: 800;
+      color: #005f73;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .rpt-company-sub {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-top: 2px;
+    }
+    .rpt-company-meta {
+      font-size: 7pt;
+      color: #555;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .rpt-right {
+      text-align: right;
+    }
+    .rpt-doc-title {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0a2540;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .rpt-period {
+      font-size: 8pt;
+      color: #555;
+      margin-top: 3px;
+    }
+    .rpt-generated {
+      font-size: 6.5pt;
+      color: #999;
+      margin-top: 6px;
+    }
+
+    /* ── SUMMARY STRIP ── */
+    .summary-strip {
+      display: flex;
+      gap: 0;
+      border: 1.5px solid #005f73;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .sum-cell {
+      flex: 1;
+      padding: 7px 8px;
+      border-right: 1px solid #b8d8e4;
+      text-align: center;
+    }
+    .sum-cell:last-child { border-right: none; }
+    .sum-label {
+      font-size: 5.5pt;
+      color: #667;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 2px;
+    }
+    .sum-value {
+      font-size: 9.5pt;
+      font-weight: 800;
+      color: #0a2540;
+    }
+    .sum-cell.highlight { background: #eaf4f7; }
+    .sum-cell.gst-cell  { background: #fff5f5; }
+    .sum-cell.total-cell { background: #eef5f0; }
+
+    /* ── MAIN TABLE ── */
+    .rpt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.5pt;
+    }
+    .rpt-table thead tr {
+      background: #005f73;
+      color: #fff;
+    }
+    .rpt-table th {
+      padding: 7px 7px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 6.5pt;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      border: 1px solid #004f63;
+      white-space: nowrap;
+    }
+    .rpt-table th.num, .rpt-table td.num { text-align: right; }
+
+    .rpt-table td {
+      padding: 5.5px 7px;
+      border: 1px solid #e0e8f0;
+      vertical-align: middle;
+    }
+    .rpt-table tbody tr:nth-child(even) { background: #f8fbfc; }
+    .rpt-table tbody tr:hover { background: #edf5f8; }
+
+    /* GST columns subtle highlight */
+    .rpt-table td.gst-col { color: #0d9488; }
+    .rpt-table td.total-col { font-weight: 700; color: #0a2540; }
+
+    /* ── FOOTER ROW ── */
+    .rpt-table tfoot tr {
+      background: #0a2540;
+      color: #fff;
+    }
+    .rpt-table tfoot td {
+      padding: 7px 7px;
+      border: 1px solid #1a3a5c;
+      font-weight: 700;
+      font-size: 7.5pt;
+    }
+
+    /* ── PAYMENT BADGE ── */
+    .pay-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 6pt;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .pay-cash   { background: #d1fae5; color: #065f46; }
+    .pay-upi    { background: #dbeafe; color: #1e3a8a; }
+    .pay-card   { background: #ede9fe; color: #4c1d95; }
+    .pay-credit { background: #fee2e2; color: #7f1d1d; }
+
+    /* ── DECLARATION FOOTER ── */
+    .rpt-declaration {
+      margin-top: 20px;
+      border-top: 1px solid #ccd;
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 6.5pt;
+      color: #555;
+    }
+    .sig-block { text-align: center; }
+    .sig-line { border-bottom: 1px solid #333; width: 130px; margin-bottom: 4px; display:block; }
+
+    /* ── PRINT ACTIONS (screen only) ── */
+    .print-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .act-btn {
+      padding: 11px 26px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: inherit;
+      transition: background .2s;
+    }
+    .btn-print-go { background: #005f73; color: #fff; }
+    .btn-print-go:hover { background: #004f63; }
+    .btn-back { background: #f1f5f9; color: #333; border: 1px solid #ccc; }
+    .btn-back:hover { background: #e2e8f0; }
+
+    @media print {
+      .print-actions { display: none !important; }
+      body { font-size: 8pt; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen action buttons -->
+  <div class="print-actions">
+    <button onclick="window.print()" class="act-btn btn-print-go">🖨️ Print / Save as PDF</button>
+    <a href="javascript:history.back()" class="act-btn btn-back">← Back</a>
+  </div>
+
+  <!-- Report Header -->
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-company-name">{{ settings.get('shop_name', 'IMPANA GOLD') }}</div>
+      <div class="rpt-company-sub">M/S Sri Devi Industries</div>
+      <div class="rpt-company-meta">
+        {{ settings.get('address_line1', '') }}{% if settings.get('address_line2') %}, {{ settings.get('address_line2') }}{% endif %}<br>
+        {% if settings.get('gstin') %}<strong>GSTIN:</strong> {{ settings.get('gstin') }} &nbsp;|&nbsp;{% endif %}
+        {% if settings.get('fssai') %}<strong>FSSAI:</strong> {{ settings.get('fssai') }}{% endif %}
+      </div>
+    </div>
+    <div class="rpt-right">
+      <div class="rpt-doc-title">GST Report</div>
+      <div class="rpt-period">📅 Period: <strong>{{ date_from }}</strong> to <strong>{{ date_to }}</strong></div>
+      <div class="rpt-period" style="margin-top:3px;">For CA / Accountant Submission</div>
+      <div class="rpt-generated">Generated: {{ generated_at }}</div>
+    </div>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="summary-strip">
+    <div class="sum-cell">
+      <div class="sum-label">Total Invoices</div>
+      <div class="sum-value">{{ summary.total_bills }}</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Gross Sales</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.subtotal) }}</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Discount</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.discount) }}</div>
+    </div>
+    <div class="sum-cell highlight">
+      <div class="sum-label">Taxable Amount</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.taxable) }}</div>
+    </div>
+    <div class="sum-cell gst-cell">
+      <div class="sum-label">CGST</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.cgst) }}</div>
+    </div>
+    <div class="sum-cell gst-cell">
+      <div class="sum-label">SGST</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.sgst) }}</div>
+    </div>
+    <div class="sum-cell gst-cell">
+      <div class="sum-label">Total GST</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.gst_total) }}</div>
+    </div>
+    <div class="sum-cell total-cell">
+      <div class="sum-label">Grand Total</div>
+      <div class="sum-value">₹ {{ '%.2f'|format(summary.grand_total) }}</div>
+    </div>
+  </div>
+
+  <!-- Invoice Table -->
+  <table class="rpt-table">
+    <thead>
+      <tr>
+        <th style="width:22px;">#</th>
+        <th>Invoice No.</th>
+        <th>Date</th>
+        <th>Customer Name</th>
+        <th>Customer GSTIN</th>
+        <th>Payment</th>
+        <th class="num">Gross (₹)</th>
+        <th class="num">Discount (₹)</th>
+        <th class="num">Taxable (₹)</th>
+        <th class="num">CGST (₹)</th>
+        <th class="num">SGST (₹)</th>
+        <th class="num">Total GST (₹)</th>
+        <th class="num">Grand Total (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="color:#aaa; font-size:6.5pt;">{{ loop.index }}</td>
+        <td><strong>{{ r.bill_number }}</strong></td>
+        <td>{{ r.date }}</td>
+        <td>{{ r.customer }}</td>
+        <td style="font-size:6.5pt; color:#555;">{{ r.customer_gstin or '—' }}</td>
+        <td>
+          <span class="pay-badge pay-{{ r.payment|lower }}">{{ r.payment }}</span>
+        </td>
+        <td class="num">{{ '%.2f'|format(r.subtotal) }}</td>
+        <td class="num" style="color:#b45309;">{{ '%.2f'|format(r.discount) }}</td>
+        <td class="num">{{ '%.2f'|format(r.taxable) }}</td>
+        <td class="num gst-col">{{ '%.2f'|format(r.cgst) }}</td>
+        <td class="num gst-col">{{ '%.2f'|format(r.sgst) }}</td>
+        <td class="num" style="color:#ef4444; font-weight:600;">{{ '%.2f'|format(r.gst_total) }}</td>
+        <td class="num total-col">{{ '%.2f'|format(r.grand_total) }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="13" style="text-align:center; padding:20px; color:#aaa;">
+          No confirmed bills found for the selected period.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="6" style="text-align:right; font-size:7pt; letter-spacing:.5px;">TOTAL ({{ summary.total_bills }} invoices)</td>
+        <td class="num">{{ '%.2f'|format(summary.subtotal) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.discount) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.taxable) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.cgst) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.sgst) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.gst_total) }}</td>
+        <td class="num">{{ '%.2f'|format(summary.grand_total) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Declaration Footer -->
+  <div class="rpt-declaration">
+    <div>
+      <strong>Declaration:</strong> This report is computer-generated and shows the actual GST collected
+      during the period <strong>{{ date_from }}</strong> to <strong>{{ date_to }}</strong>.<br>
+      All figures are in Indian Rupees (₹). CGST and SGST are split 50:50 of total GST collected.
+    </div>
+    <div class="sig-block">
+      <span class="sig-line">&nbsp;</span>
+      <strong>Authorised Signatory</strong><br>
+      <span style="font-size:6pt; color:#555;">{{ settings.get('shop_name', 'Impana Gold') }}</span>
+    </div>
+  </div>
+
+</body>
+</html>

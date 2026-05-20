@@ -1,0 +1,72 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Dashboard - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <h1>Dashboard</h1>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span>Today's Revenue</span>
+      <strong>Rs. {{ '%.2f'|format(revenue) }}</strong>
+    </div>
+    <div class="metric-card">
+      <span>Today's Bills</span>
+      <strong>{{ bill_count }}</strong>
+    </div>
+    <div class="metric-card">
+      <span>Average Bill</span>
+      <strong>Rs. {{ '%.2f'|format(avg_bill) }}</strong>
+    </div>
+    <div class="metric-card">
+      <span>Total GST</span>
+      <strong>Rs. {{ '%.2f'|format(gst_total) }}</strong>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <div class="card">
+      <h2>Weekly Revenue</h2>
+      {% set max_total = (weekly_data | map(attribute='total') | max) if weekly_data else 0 %}
+      <div class="bar-chart">
+        {% for row in weekly_data %}
+          {% set height = (row.total / (max_total or 1)) * 100 %}
+          <div class="bar" style="height: {{ height }}%" title="{{ row.date }}">
+            <span>{{ '%.0f'|format(row.total) }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="bar-labels">
+        {% for row in weekly_data %}
+          <span>{{ row.date.strftime('%a') }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Top Products (Month)</h2>
+      <ol class="top-list">
+        {% for row in top_products %}
+          <li>{{ row.product_name }} - {{ '%.3f'|format(row.qty_sold) }}</li>
+        {% else %}
+          <li>No sales yet.</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Payment Mix (Today)</h2>
+      <div class="payment-breakdown">
+        {% for item in payment_breakdown %}
+          <div class="payment-row">
+            <span class="mode">{{ item.mode|capitalize }}</span>
+            <span class="amount">Rs. {{ '%.2f'|format(item.amount) }}</span>
+            <span class="percent">{{ item.percent }}%</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

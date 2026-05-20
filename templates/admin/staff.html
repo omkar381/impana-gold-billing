@@ -1,0 +1,101 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Staff - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Staff Management</h1>
+  </div>
+
+  <div class="admin-grid">
+    <div class="card">
+      <h2>Add Staff</h2>
+      <form method="post" action="{{ url_for('admin.add_staff') }}" class="form-grid">
+        {{ add_form.hidden_tag() }}
+        <label>
+          <span>Username</span>
+          {{ add_form.username(class="input") }}
+        </label>
+        <label>
+          <span>Password</span>
+          {{ add_form.password(class="input") }}
+        </label>
+        <label>
+          <span>Role</span>
+          {{ add_form.role(class="input") }}
+        </label>
+        <button class="btn btn-primary" type="submit">Create</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Staff List</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Last Login</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ 'Active' if user.is_active else 'Inactive' }}</td>
+                <td>{{ user.last_login.strftime('%d-%m-%Y %H:%M') if user.last_login else '-' }}</td>
+                <td class="row-actions">
+                  {% if user.role != 'superadmin' %}
+                    <form method="post" action="{{ url_for('admin.toggle_staff', user_id=user.id) }}" class="inline-form" data-confirm="Toggle staff status?">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn-ghost" type="submit">Toggle</button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin.reset_staff_password', user_id=user.id) }}" class="inline-form" data-confirm="Reset password for this staff?">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn-danger" type="submit">Reset Pass</button>
+                    </form>
+                  {% endif %}
+                  <a class="btn btn-link" href="{{ url_for('admin.staff', user_id=user.id) }}">Audit</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Audit Logs{% if selected_user_id %} (User {{ selected_user_id }}){% endif %}</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Entity ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+            <tr>
+              <td>{{ log.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+              <td>{{ log.action }}</td>
+              <td>{{ log.entity }}</td>
+              <td>{{ log.entity_id or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">Select a staff member to view logs.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

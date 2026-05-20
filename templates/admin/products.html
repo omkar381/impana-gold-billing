@@ -1,0 +1,149 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Products - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Products</h1>
+    <form method="get" class="filter-bar">
+      <input class="input" type="text" name="q" value="{{ q or '' }}" placeholder="Search products">
+      <select class="input" name="category">
+        <option value="">All categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if selected_category|string == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-secondary" type="submit">Filter</button>
+    </form>
+  </div>
+
+  <div class="admin-grid">
+    <div class="card">
+      <h2>{% if edit_product %}Edit Product{% else %}Add Product{% endif %}</h2>
+      <form method="post" enctype="multipart/form-data" action="{% if edit_product %}{{ url_for('admin.edit_product', product_id=edit_product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}" class="form-grid">
+        {{ form.hidden_tag() }}
+
+        <label>
+          <span>Name</span>
+          {{ form.name(class="input") }}
+          {% if form.name.errors %}<small class="field-error">{{ form.name.errors[0] }}</small>{% endif %}
+        </label>
+        <label>
+          <span>SKU</span>
+          {{ form.sku(class="input") }}
+          {% if form.sku.errors %}<small class="field-error">{{ form.sku.errors[0] }}</small>{% endif %}
+        </label>
+        <label>
+          <span>Category</span>
+          {{ form.category_id(class="input") }}
+        </label>
+        <label>
+          <span>Price per Unit</span>
+          {{ form.price_per_unit(class="input") }}
+        </label>
+        <label>
+          <span>Unit</span>
+          {{ form.unit(class="input") }}
+        </label>
+        <label>
+          <span>Weight (grams)</span>
+          {{ form.weight_grams(class="input") }}
+        </label>
+        <label>
+          <span>HSN Code</span>
+          {{ form.hsn_code(class="input") }}
+        </label>
+        <label>
+          <span>GST Rate</span>
+          {{ form.gst_rate(class="input") }}
+        </label>
+        <label>
+          <span>Barcode</span>
+          {{ form.barcode(class="input") }}
+        </label>
+        {% if not edit_product %}
+        <label>
+          <span>Initial Stock</span>
+          {{ form.initial_stock(class="input", placeholder="0") }}
+        </label>
+        {% endif %}
+        <label>
+          <span>Product Image</span>
+          {{ form.image(class="input") }}
+        </label>
+        <label class="checkbox">
+          {{ form.is_active() }}
+          <span>Active</span>
+        </label>
+
+        {% if edit_product and edit_product.image_path %}
+          <div class="product-image-preview">
+            <img src="{{ url_for('static', filename=edit_product.image_path) }}" alt="{{ edit_product.name }}">
+          </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">{% if edit_product %}Update{% else %}Add{% endif %}</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Catalogue</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Image</th>
+              <th>Weight</th>
+              <th>Unit</th>
+              <th>Stock</th>
+              <th>Price</th>
+              <th>GST</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+              <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category.name if product.category else 'Uncategorized' }}</td>
+                <td>
+                  {% if product.image_path %}
+                    <img class="product-thumb" src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+                  {% else %}
+                    <span class="product-thumb placeholder">No image</span>
+                  {% endif %}
+                </td>
+                <td>{{ product.weight_grams or '-' }}</td>
+                <td>{{ product.unit }}</td>
+                <td>{{ '%.3f'|format(product.stock_qty or 0) }}</td>
+                <td>Rs. {{ '%.2f'|format(product.price_per_unit) }}</td>
+                <td>{{ '%.2f'|format(product.gst_rate or 0) }}%</td>
+                <td>{{ 'Active' if product.is_active else 'Inactive' }}</td>
+                <td class="row-actions">
+                  <a class="btn btn-link" href="{{ url_for('admin.edit_product', product_id=product.id) }}">Edit</a>
+                  <form method="post" action="{{ url_for('admin.toggle_product', product_id=product.id) }}" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-ghost" type="submit">Toggle</button>
+                  </form>
+                  <form method="post" action="{{ url_for('admin.delete_product', product_id=product.id) }}" class="inline-form" data-confirm="Delete this product?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="11">No products found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

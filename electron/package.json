@@ -1,0 +1,62 @@
+{
+  "name": "impana-gold",
+  "version": "1.0.0",
+  "description": "Impana Gold Billing System — M/S Sri Devi Industries",
+  "main": "main.js",
+  "author": "M/S Sri Devi Industries",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win dir --x64",
+    "build-portable": "electron-builder --win portable --x64",
+    "build-zip": "electron-builder --win dir --x64"
+  },
+  "build": {
+    "appId": "com.sridevi.impanagold",
+    "productName": "Impana Gold",
+    "copyright": "Copyright 2025 M/S Sri Devi Industries",
+    "icon": "assets/icon.png",
+    "directories": {
+      "output": "../dist/electron-out"
+    },
+    "extraResources": [
+      {
+        "from": "../dist/ImpanaServer",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Impana Gold",
+      "installerIcon": "assets/icon.png",
+      "uninstallerIcon": "assets/icon.png",
+      "displayLanguageSelector": false,
+      "license": null
+    },
+    "portable": {
+      "artifactName": "ImpanaGold-Portable-${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}

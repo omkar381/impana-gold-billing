@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+dist/
+build/
+*.exe
+*.log
+static/uploads/
+electron/node_modules/
+electron-out/
+node_modules/

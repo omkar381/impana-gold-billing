@@ -1,0 +1,86 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Bills - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Bills</h1>
+    <form method="get" class="filter-bar">
+      <input class="input" type="date" name="start_date" value="{{ filters.get('start_date', '') }}">
+      <input class="input" type="date" name="end_date" value="{{ filters.get('end_date', '') }}">
+      <select class="input" name="status">
+        <option value="">All status</option>
+        {% for s in ['draft','confirmed','cancelled'] %}
+          <option value="{{ s }}" {% if filters.get('status') == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select class="input" name="payment">
+        <option value="">All payment</option>
+        {% for p in ['cash','upi','card','credit'] %}
+          <option value="{{ p }}" {% if filters.get('payment') == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+      <input class="input" type="text" name="q" value="{{ filters.get('q', '') }}" placeholder="Search bill number">
+      <button class="btn btn-secondary" type="submit">Apply</button>
+      <a class="btn btn-ghost" href="{{ url_for('admin.export_bills', **filters) }}">Export CSV</a>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Bill No</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Grand Total</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in bills %}
+            <tr>
+              <td>{{ bill.bill_number }}</td>
+              <td>{{ bill.bill_date.strftime('%d-%m-%Y %H:%M') }}</td>
+              <td>{{ bill.customer.name if bill.customer else 'Walk-in' }}</td>
+              <td>{{ bill.items|length }}</td>
+              <td>Rs. {{ '%.2f'|format(bill.grand_total) }}</td>
+              <td>{{ bill.payment_mode }}</td>
+              <td>{{ bill.status }}</td>
+              <td class="row-actions">
+                <a class="btn btn-link" href="{{ url_for('admin.bill_detail', bill_id=bill.id) }}">View</a>
+                <a class="btn btn-ghost" target="_blank" href="{{ url_for('billing.print_bill', bill_id=bill.id) }}">Print</a>
+                <a class="btn btn-ghost" href="{{ url_for('billing.download_pdf', bill_id=bill.id) }}">PDF</a>
+                {% if bill.status != 'cancelled' %}
+                  <form method="post" action="{{ url_for('admin.admin_cancel_bill', bill_id=bill.id) }}" class="inline-form" data-prompt="Enter cancellation reason">
+                    {{ cancel_form.hidden_tag() }}
+                    <input type="hidden" name="cancel_reason" class="js-cancel-reason">
+                    <button class="btn btn-danger" type="submit">Cancel</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8">No bills found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.bills', page=pagination.prev_num, **filters) }}">Previous</a>
+      {% endif %}
+      <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+      {% if pagination.has_next %}
+        <a href="{{ url_for('admin.bills', page=pagination.next_num, **filters) }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

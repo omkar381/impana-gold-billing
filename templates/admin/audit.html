@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Audit Panel - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Audit Panel</h1>
+    <form method="get" class="filter-bar">
+      <select class="input" name="user_id">
+        <option value="">All users</option>
+        {% for user in users %}
+          <option value="{{ user.id }}" {% if selected_user_id == user.id %}selected{% endif %}>{{ user.username }} ({{ user.role }})</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-secondary" type="submit">Filter</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Activity Log</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Entity ID</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+            <tr>
+              <td>{{ log.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+              <td>{{ log.actor.username if log.actor else '-' }}</td>
+              <td>{{ log.action }}</td>
+              <td>{{ log.entity }}</td>
+              <td>{{ log.entity_id or '-' }}</td>
+              <td>{{ log.ip_address or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6">No audit records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Stock Movements</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Product</th>
+            <th>Change</th>
+            <th>Before</th>
+            <th>After</th>
+            <th>Reason</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in stock_logs %}
+            <tr>
+              <td>{{ row.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+              <td>{{ row.actor.username if row.actor else '-' }}</td>
+              <td>{{ row.product.name if row.product else row.product_id }}</td>
+              <td>{{ '%.3f'|format(row.change_qty) }}</td>
+              <td>{{ '%.3f'|format(row.before_qty) }}</td>
+              <td>{{ '%.3f'|format(row.after_qty) }}</td>
+              <td>{{ row.reason }}</td>
+              <td>{{ row.note or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8">No stock records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

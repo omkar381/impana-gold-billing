@@ -1,0 +1,218 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Settings - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <h1>Business Settings</h1>
+  </div>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data" class="settings-form">
+      {{ form.hidden_tag() }}
+
+      <!-- Business Info -->
+      <fieldset class="settings-group">
+        <legend>🏢 Business Information</legend>
+        <div class="form-grid-2">
+          <label>
+            <span>Shop Name *</span>
+            {{ form.shop_name(class="input") }}
+          </label>
+          <label>
+            <span>Tagline / Description</span>
+            {{ form.tagline(class="input", placeholder="e.g. Manufacturing & Supply of Rava and Poha") }}
+          </label>
+          <label>
+            <span>Address Line 1</span>
+            {{ form.address_line1(class="input") }}
+          </label>
+          <label>
+            <span>Address Line 2</span>
+            {{ form.address_line2(class="input") }}
+          </label>
+          <label>
+            <span>City</span>
+            {{ form.city(class="input") }}
+          </label>
+          <label>
+            <span>State</span>
+            {{ form.state(class="input") }}
+          </label>
+          <label>
+            <span>State Code</span>
+            {{ form.state_code(class="input", placeholder="e.g. 29") }}
+          </label>
+          <label>
+            <span>Pincode</span>
+            {{ form.pincode(class="input") }}
+          </label>
+          <label>
+            <span>Phone</span>
+            {{ form.phone(class="input") }}
+          </label>
+          <label>
+            <span>Phone 2 (Alternate)</span>
+            {{ form.phone2(class="input") }}
+          </label>
+          <label>
+            <span>Email</span>
+            {{ form.email(class="input") }}
+          </label>
+          <label>
+            <span>Website</span>
+            {{ form.website(class="input", placeholder="e.g. www.impanagold.com") }}
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- Tax & Compliance -->
+      <fieldset class="settings-group">
+        <legend>📋 Tax & Compliance</legend>
+        <div class="form-grid-2">
+          <label>
+            <span>GSTIN</span>
+            {{ form.gstin(class="input", placeholder="e.g. 29AABCU9603R1ZM") }}
+          </label>
+          <label>
+            <span>FSSAI License No.</span>
+            {{ form.fssai(class="input") }}
+          </label>
+          <label>
+            <span>ISO Certification No.</span>
+            {{ form.iso_certification(class="input", placeholder="e.g. ISO 22000:2018") }}
+          </label>
+        </div>
+        <label class="checkbox">
+          {{ form.gst_enabled() }}
+          <span>Enable GST on Bills</span>
+        </label>
+      </fieldset>
+
+      <!-- Bank Details -->
+      <fieldset class="settings-group">
+        <legend>🏦 Bank Details <span class="muted">(Optional — displayed on invoice)</span></legend>
+        <div class="form-grid-2">
+          <label>
+            <span>Bank Name</span>
+            {{ form.bank_name(class="input", placeholder="e.g. State Bank of India") }}
+          </label>
+          <label>
+            <span>Branch</span>
+            {{ form.bank_branch(class="input") }}
+          </label>
+          <label>
+            <span>Account Number</span>
+            {{ form.bank_account(class="input") }}
+          </label>
+          <label>
+            <span>IFSC Code</span>
+            {{ form.bank_ifsc(class="input") }}
+          </label>
+          <label>
+            <span>UPI ID</span>
+            {{ form.upi_id(class="input", placeholder="e.g. shop@upi") }}
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- Invoice Configuration -->
+      <fieldset class="settings-group">
+        <legend>🧾 Invoice Configuration</legend>
+        <div class="form-grid-2">
+          <label>
+            <span>Bill Prefix</span>
+            {{ form.bill_prefix(class="input") }}
+          </label>
+          <label>
+            <span>Bill Counter Reset</span>
+            {{ form.bill_counter_reset(class="input") }}
+          </label>
+        </div>
+        <label>
+          <span>Terms & Conditions <span class="muted">(printed on invoice)</span></span>
+          {{ form.terms_conditions(class="input", rows="3", placeholder="Goods once sold will not be taken back.\nSubject to local jurisdiction.") }}
+        </label>
+        <label>
+          <span>Declaration <span class="muted">(GST declaration text)</span></span>
+          {{ form.declaration(class="input", rows="2", placeholder="We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.") }}
+        </label>
+        <label>
+          <span>Authorized Signatory Name</span>
+          {{ form.signature_name(class="input", placeholder="e.g. For Impana Gold") }}
+        </label>
+      </fieldset>
+
+      <!-- Branding & Certification Logos -->
+      <fieldset class="settings-group">
+        <legend>🎨 Branding & Certification Logos</legend>
+        <p class="muted" style="margin:0 0 12px">Upload your brand logo and certification logos. These will be displayed on invoices.</p>
+
+        <div class="form-grid-2">
+          <div class="upload-group">
+            <label>
+              <span>Brand Logo</span>
+              {{ form.logo(class="input") }}
+            </label>
+            {% if settings.get('logo_path') %}
+              <div class="logo-preview">
+                <img src="{{ url_for('static', filename=settings.get('logo_path')) }}" alt="Brand Logo">
+                <span class="preview-label">Current Brand Logo</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="upload-group">
+            <label>
+              <span>FSSAI Certificate Logo</span>
+              {{ form.fssai_logo(class="input") }}
+            </label>
+            {% if settings.get('fssai_logo_path') %}
+              <div class="logo-preview">
+                <img src="{{ url_for('static', filename=settings.get('fssai_logo_path')) }}" alt="FSSAI Logo">
+                <span class="preview-label">Current FSSAI Logo</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="upload-group">
+            <label>
+              <span>ISO Certificate Logo</span>
+              {{ form.iso_logo(class="input") }}
+            </label>
+            {% if settings.get('iso_logo_path') %}
+              <div class="logo-preview">
+                <img src="{{ url_for('static', filename=settings.get('iso_logo_path')) }}" alt="ISO Logo">
+                <span class="preview-label">Current ISO Logo</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="upload-group">
+            <label>
+              <span>Other Certification Logo</span>
+              {{ form.other_cert_logo(class="input") }}
+            </label>
+            {% if settings.get('other_cert_logo_path') %}
+              <div class="logo-preview">
+                <img src="{{ url_for('static', filename=settings.get('other_cert_logo_path')) }}" alt="Other Cert">
+                <span class="preview-label">Current Certification Logo</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="muted" style="margin-top:12px;">
+          <strong>Folder Structure:</strong><br>
+          <code>static/uploads/logos/</code> — Brand logos<br>
+          <code>static/uploads/certifications/</code> — FSSAI, ISO certificate images<br>
+          <code>static/uploads/product_packs/</code> — Product packaging designs
+        </div>
+      </fieldset>
+
+      <button class="btn btn-primary" type="submit">💾 Save Settings</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

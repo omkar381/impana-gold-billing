@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}POS - Impana Gold{% endblock %}
+
+{% block extra_head %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{% endblock %}
+
+{% block content %}
+<section id="pos-app" class="pos-layout" data-gst-enabled="{{ 'true' if settings.get('gst_enabled', 'true') == 'true' else 'false' }}">
+  <div class="pos-left">
+    <div class="panel">
+      <div class="panel-header">
+        <h1>{{ settings.get('shop_name', 'Impana Gold') }}</h1>
+        <p class="muted">Fast billing and cart management</p>
+      </div>
+
+      <div class="search-bar">
+        <input id="product-search" class="input" type="text" placeholder="🔍 Search by name, SKU, or barcode (F2)">
+      </div>
+
+      <div class="category-tabs" id="category-tabs">
+        <button class="tab active" data-category="all">All</button>
+        {% for category in categories %}
+          <button class="tab" data-category="{{ category.id }}">{{ category.name }}</button>
+        {% endfor %}
+      </div>
+
+      <div class="product-grid" id="product-grid">
+        {% for product in products %}
+          <div
+            class="product-card"
+            data-id="{{ product.id }}"
+            data-name="{{ product.name }}"
+            data-sku="{{ product.sku }}"
+            data-price="{{ '%.2f'|format(product.price_per_unit) }}"
+            data-unit="{{ product.unit }}"
+            data-gst="{{ '%.2f'|format(product.gst_rate or 0) }}"
+            data-hsn="{{ product.hsn_code or '' }}"
+            data-barcode="{{ product.barcode or '' }}"
+            data-category="{{ product.category_id or '' }}"
+            data-weight="{{ product.weight_grams or '' }}"
+          >
+            {% if product.image_path %}
+              <img class="product-image" src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+            {% else %}
+              <div class="product-image placeholder">{{ product.name[:1]|upper }}</div>
+            {% endif %}
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-meta">
+              <span>{% if product.weight_grams %}{{ product.weight_grams }}g{% endif %} {{ product.unit }}</span>
+              <span class="product-price">₹{{ '%.2f'|format(product.price_per_unit) }}/{{ product.unit }}</span>
+            </div>
+            {% if product.hsn_code %}
+              <div class="product-hsn">HSN: {{ product.hsn_code }}</div>
+            {% endif %}
+            <div class="product-actions">
+              {% if product.unit == 'kg' %}
+                <div class="rate-override-row">
+                  <span class="rate-override-label">₹/kg</span>
+                  <input class="rate-override-input" type="number" min="0" step="0.01"
+                         placeholder="{{ '%.2f'|format(product.price_per_unit) }}"
+                         data-id="{{ product.id }}"
+                         title="Override price per kg for this bill">
+                </div>
+                <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 kg">1 kg</button>
+                <button class="bag-btn bag-30" data-id="{{ product.id }}" data-qty="30" title="Add 30 kg bag">30 Pkt</button>
+                <button class="bag-btn bag-loose" data-id="{{ product.id }}" data-loose="1" title="Add loose qty">Loose</button>
+              {% else %}
+                <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 {{ product.unit }}">+ 1</button>
+              {% endif %}
+              <input class="quick-qty-input" type="number" min="0.001" step="0.001" placeholder="Qty" data-id="{{ product.id }}">
+              <button class="bag-btn bag-custom" data-id="{{ product.id }}" title="Add custom qty">Add</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="pos-right">
+    <div class="panel cart-panel">
+      <div class="panel-header">
+        <h2>🛒 Current Cart</h2>
+        <span id="cart-count" class="badge">0 items</span>
+      </div>
+
+      <div id="pos-error" class="alert alert-danger" hidden></div>
+
+      <div class="cart-table-wrap">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Rate</th>
+              <th>Qty</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cart-body"></tbody>
+        </table>
+        <div id="cart-empty-msg" class="cart-empty">
+          <div class="cart-empty-icon">📦</div>
+          <p>Cart is empty — click a product to add</p>
+        </div>
+      </div>
+
+      <div class="cart-options">
+        <div class="field-group">
+          <label>Discount</label>
+          <div class="inline-group">
+            <label class="radio">
+              <input type="radio" name="discount-type" value="flat" checked>
+              <span>Flat ₹</span>
+            </label>
+            <label class="radio">
+              <input type="radio" name="discount-type" value="percent">
+              <span>%</span>
+            </label>
+            <input id="discount-amount" type="number" class="input small" value="0" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Customer / Shop</label>
+          <input id="customer-search" class="input" type="text" placeholder="Search name or phone">
+          <div id="customer-suggestions" class="suggestions"></div>
+          <div class="inline-group">
+            <input id="customer-name" class="input" type="text" placeholder="Customer name">
+            <input id="customer-phone" class="input" type="text" placeholder="Phone">
+          </div>
+          <textarea id="customer-address" class="input" rows="2" placeholder="Address"></textarea>
+          <input id="customer-gstin" class="input" type="text" placeholder="GSTIN (optional)">
+          <input id="customer-id" type="hidden">
+        </div>
+
+        <div class="field-group">
+          <label>Payment Mode</label>
+          <div class="inline-group payment-modes">
+            <label class="radio-pill"><input type="radio" name="payment-mode" value="cash" checked><span>💵 Cash</span></label>
+            <label class="radio-pill"><input type="radio" name="payment-mode" value="upi"><span>📱 UPI</span></label>
+            <label class="radio-pill"><input type="radio" name="payment-mode" value="card"><span>💳 Card</span></label>
+            <label class="radio-pill"><input type="radio" name="payment-mode" value="credit"><span>📋 Credit</span></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>GST</label>
+          <label class="gst-toggle-label">
+            <input type="checkbox" id="apply-overall-gst" class="gst-checkbox">
+            <span class="gst-toggle-pill-span">🧾 Apply 5% GST on Total</span>
+          </label>
+          <div id="gst-override-note" class="gst-note" hidden>
+            GST @ 5% will be added on the taxable total
+          </div>
+        </div>
+
+        <div class="field-group" id="cash-fields">
+          <label>Amount Paid</label>
+          <div class="inline-group">
+            <input id="amount-paid" class="input" type="number" min="0" step="0.01">
+            <div class="change-box">
+              Change: <span id="change-returned">0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Notes</label>
+          <textarea id="bill-notes" class="input" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">0.00</span></div>
+        <div class="summary-row"><span>Discount</span><span id="summary-discount">0.00</span></div>
+        <div class="summary-row"><span>Taxable</span><span id="summary-taxable">0.00</span></div>
+        <div class="summary-row"><span>GST</span><span id="summary-gst">0.00</span></div>
+        <div class="summary-row total"><span>Grand Total</span><span id="summary-grand">₹ 0.00</span></div>
+      </div>
+
+      <div class="cart-actions">
+        <button id="save-print" class="btn btn-primary btn-lg">💾 Save & Print (F4)</button>
+        <div class="cart-actions-row">
+          <button id="save-draft" class="btn btn-secondary">Save Draft</button>
+          <button id="clear-cart" class="btn btn-ghost">🗑 Clear Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{{ url_for('static', filename='js/billing.js') }}" defer></script>
+{% endblock %}

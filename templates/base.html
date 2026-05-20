@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Impana Gold Billing{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}app-body{% endblock %}">
+  <header class="site-header">
+    <div class="brand">
+      <a href="{{ url_for('billing.pos') }}">Impana Gold</a>
+    </div>
+    <nav class="main-nav">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('billing.pos') }}">POS</a>
+        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Login</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flash-stack" data-flash-stack>
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% endwith %}
+
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    window.addEventListener("load", function () {
+      var stack = document.querySelector("[data-flash-stack]");
+      if (!stack) return;
+      setTimeout(function () {
+        stack.classList.add("is-hidden");
+      }, 4000);
+    });
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

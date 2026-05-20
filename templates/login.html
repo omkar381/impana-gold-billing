@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+  <div class="card auth-card">
+    <h1>Admin Login</h1>
+    <p class="muted">Enter your credentials to access the system.</p>
+
+    <form method="post" class="form-grid">
+      {{ form.hidden_tag() }}
+
+      <label>
+        <span>Username</span>
+        {{ form.username(class="input") }}
+        {% if form.username.errors %}
+          <small class="field-error">{{ form.username.errors[0] }}</small>
+        {% endif %}
+      </label>
+
+      <label>
+        <span>Password</span>
+        {{ form.password(class="input") }}
+        {% if form.password.errors %}
+          <small class="field-error">{{ form.password.errors[0] }}</small>
+        {% endif %}
+      </label>
+
+      <button type="submit" class="btn btn-primary">Sign In</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
