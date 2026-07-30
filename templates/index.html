@@ -11,9 +11,15 @@
 <section id="pos-app" class="pos-layout" data-gst-enabled="{{ 'true' if settings.get('gst_enabled', 'true') == 'true' else 'false' }}">
   <div class="pos-left">
     <div class="panel">
-      <div class="panel-header">
-        <h1>{{ settings.get('shop_name', 'Impana Gold') }}</h1>
-        <p class="muted">Fast billing and cart management</p>
+      <div class="panel-header pos-branding">
+        {% set logo_path = settings.get('logo_path') %}
+        {% if logo_path %}
+          <img src="{{ url_for('static', filename=logo_path) }}" alt="Shop Logo" class="pos-shop-logo">
+        {% endif %}
+        <div>
+          <h1>{{ settings.get('shop_name', 'Impana Gold') }}</h1>
+          <p class="muted">Fast billing and cart management</p>
+        </div>
       </div>
 
       <div class="search-bar">
@@ -78,6 +84,9 @@
             </div>
           </div>
         {% endfor %}
+      </div>
+      <div class="pos-footer">
+        Powered by <strong>Padashetty Softwares</strong>
       </div>
     </div>
   </div>

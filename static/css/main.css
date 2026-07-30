@@ -51,16 +51,16 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 28px;
+  padding: 12px 28px;
   background: var(--surface);
-  box-shadow: 0 1px 0 var(--stroke);
+  border-bottom: 1px solid var(--stroke); padding: 12px 8px;
   position: sticky;
   top: 0;
   z-index: 50;
 }
 
 .brand a {
-  font-family: "Domine", serif;
+  font-family: "Inter", sans-serif; letter-spacing: -0.5px;
   font-size: 20px;
   font-weight: 700;
 }
@@ -81,12 +81,12 @@ a {
   padding: 24px 28px 48px;
 }
 
-.card,
-.panel {
+.card, .panel {
   background: var(--surface);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--stroke);
+  padding: 24px;
 }
 
 .panel-header h1,
@@ -103,7 +103,7 @@ a {
 .input {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--stroke);
   background: #fff;
   font-family: inherit;
@@ -145,14 +145,14 @@ a {
 }
 
 .btn-primary {
-  background: var(--gold);
-  color: #1a1a1a;
-  box-shadow: 0 8px 18px rgba(201, 168, 76, 0.35);
+  background: var(--ink);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--gold-dark);
-  box-shadow: 0 12px 24px rgba(201, 168, 76, 0.45);
+  background: #334155;
+  box-shadow: var(--shadow);
 }
 
 .btn-lg {
@@ -209,7 +209,7 @@ a {
 
 .flash {
   padding: 10px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: #fff;
   box-shadow: var(--shadow);
 }
@@ -227,7 +227,7 @@ a {
 
 .alert {
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   margin-bottom: 10px;
 }
 
@@ -243,7 +243,7 @@ a {
   bottom: 24px;
   right: 24px;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: #fff;
   font-weight: 500;
   font-size: 14px;
@@ -322,14 +322,15 @@ a {
 }
 
 .product-card {
-  background: var(--panel);
-  border: 2px solid transparent;
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
 
 .product-image {
   width: 100%;
   height: 110px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
   margin-bottom: 8px;
   background: #f0f0f0;
@@ -354,7 +355,7 @@ a {
 .product-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
-  border-color: var(--gold-light);
+  border-color: var(--gold); box-shadow: var(--shadow);
 }
 
 .product-name {
@@ -393,7 +394,7 @@ a {
 
 .bag-btn {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--stroke);
   background: #fff;
   font-weight: 600;
@@ -476,7 +477,7 @@ a {
 .quick-qty-input {
   width: 60px;
   padding: 5px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--stroke);
   font-size: 12px;
   text-align: center;
@@ -531,7 +532,7 @@ a {
 .cart-table th,
 .cart-table td {
   padding: 8px;
-  border-bottom: 1px solid var(--stroke);
+  border-bottom: 1px solid var(--stroke); padding: 12px 8px;
 }
 
 .cart-table th {
@@ -587,7 +588,7 @@ a {
 .qty-btn {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--stroke);
   background: var(--panel);
   cursor: pointer;
@@ -676,7 +677,7 @@ a {
   margin-bottom: 5px;
   background: #fffdf2;
   border: 1.5px solid var(--gold);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 3px 8px;
 }
 
@@ -712,7 +713,7 @@ a {
 .remove-btn {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: rgba(180, 35, 24, 0.1);
   color: var(--danger);
@@ -774,7 +775,7 @@ a {
 .radio-pill span {
   display: inline-block;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--stroke);
   font-size: 13px;
   font-weight: 500;
@@ -795,7 +796,7 @@ a {
 .change-box {
   background: var(--panel);
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -816,7 +817,7 @@ a {
 .gst-toggle-pill-span {
   display: inline-block;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1.5px solid var(--stroke);
   font-size: 13px;
   font-weight: 500;
@@ -893,7 +894,7 @@ a {
 .suggestions {
   background: var(--surface);
   border: 1px solid var(--stroke);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   display: none;
   position: absolute;
@@ -965,7 +966,7 @@ a {
 }
 
 .sidebar-brand {
-  font-family: "Domine", serif;
+  font-family: "Inter", sans-serif; letter-spacing: -0.5px;
   font-size: 20px;
   margin-bottom: 24px;
 }
@@ -974,7 +975,7 @@ a {
   display: block;
   padding: 10px 12px;
   margin-bottom: 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: #fff;
   transition: background 0.2s ease;
 }
@@ -1055,7 +1056,7 @@ a {
 .data-table th,
 .data-table td {
   padding: 10px 8px;
-  border-bottom: 1px solid var(--stroke);
+  border-bottom: 1px solid var(--stroke); padding: 12px 8px;
   text-align: left;
   font-size: 14px;
 }
@@ -1063,7 +1064,7 @@ a {
 .product-thumb {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   object-fit: cover;
   display: inline-block;
 }
@@ -1076,14 +1077,14 @@ a {
   padding: 6px 8px;
   background: #f0f0f0;
   color: var(--muted);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .product-image-preview img {
   width: 140px;
   height: 140px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1168,7 +1169,7 @@ a {
 
 .logo-preview img {
   max-width: 180px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-top: 6px;
 }
 
@@ -1248,3 +1249,38 @@ a {
     z-index: 20;
   }
 }
+
+/* Custom Additions */
+.pos-branding {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--stroke);
+  margin-bottom: 20px;
+}
+.pos-branding h1 { margin: 0 0 4px; font-size: 20px; }
+.pos-shop-logo {
+  max-width: 64px;
+  max-height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+.pos-footer {
+  text-align: center;
+  padding-top: 24px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pos-footer strong {
+  color: var(--ink);
+}
+.summary-row.total {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  padding-top: 12px;
+  margin-top: 6px;
+  border-top: 2px solid var(--stroke);
+}
+.cart-summary { border-top: none; }
