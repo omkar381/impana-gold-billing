@@ -155,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         qtyLabel = qtyNum + " " + item.unit;
       }
 
+      var qtyDisplay = item.qty % 1 === 0 ? item.qty.toFixed(0) : item.qty.toFixed(3);
       var isBag30 = !item.is_loose && item.unit === "kg" && item.qty >= 30 && item.qty % 30 === 0;
       var stepVal = isBag30 ? "30" : "1";
       var qtyInputVal = isBag30 ? (item.qty / 30).toFixed(0) : qtyDisplay;
