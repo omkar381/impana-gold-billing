@@ -51,6 +51,7 @@ class DevelopmentConfig(BaseConfig):
     """Development — verbose errors, no HTTPS enforcement."""
     DEBUG = True
     TESTING = False
+    TEMPLATES_AUTO_RELOAD = True
 
 
 class ProductionConfig(BaseConfig):

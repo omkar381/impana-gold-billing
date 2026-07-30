@@ -188,7 +188,7 @@
               <td class="c-hsn">{{ item.hsn_code or '' }}</td>
               <td class="c-qty">
                 {% if item.unit == 'kg' and item.qty|float >= 30 and item.qty|float % 30 == 0 %}
-                {{ '%g'|format(item.qty|float) }} PKT / 1KG
+                30kg/{{ '%g'|format(item.qty|float / 30) }}
                 {% else %}
                 {{ '%g'|format(item.qty|float) }} {{ item.unit|upper }}
                 {% endif %}

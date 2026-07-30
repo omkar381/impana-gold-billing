@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Smart qty label: show "X Pkt (Ykg)" for 30kg multiples
       var qtyLabel = "";
       if (!item.is_loose && item.unit === "kg" && item.qty >= 30 && item.qty % 30 === 0) {
-        qtyLabel = item.qty + " Pkt / 1kg";
+        qtyLabel = "30kg/" + (item.qty / 30);
       } else if (item.unit === "kg" && item.qty === 1) {
         qtyLabel = "1 kg";
       } else {
