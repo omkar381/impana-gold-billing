@@ -155,7 +155,11 @@ document.addEventListener("DOMContentLoaded", function () {
         qtyLabel = qtyNum + " " + item.unit;
       }
 
-      var qtyDisplay = item.qty % 1 === 0 ? item.qty.toFixed(0) : item.qty.toFixed(3);
+      var isBag30 = !item.is_loose && item.unit === "kg" && item.qty >= 30 && item.qty % 30 === 0;
+      var stepVal = isBag30 ? "30" : "1";
+      var qtyInputVal = isBag30 ? (item.qty / 30).toFixed(0) : qtyDisplay;
+      var qtyInputLabel = isBag30 ? "bags" : item.unit;
+
       var row = document.createElement("tr");
       row.innerHTML =
         '<td class="cart-item-name">' +
@@ -167,9 +171,9 @@ document.addEventListener("DOMContentLoaded", function () {
         '</td>' +
         '<td class="cart-item-qty">' +
           '<div class="qty-stepper">' +
-            '<button class="qty-btn qty-minus" data-key="' + item.key + '">−</button>' +
-            '<input class="qty-input" type="number" min="0.001" step="1" data-key="' + item.key + '" value="' + qtyDisplay + '">' +
-            '<button class="qty-btn qty-plus" data-key="' + item.key + '">+</button>' +
+            '<button class="qty-btn qty-minus" data-key="' + item.key + '" data-step="' + stepVal + '">−</button>' +
+            '<input class="qty-input" type="number" min="0.001" step="' + stepVal + '" data-key="' + item.key + '" data-step="' + stepVal + '" value="' + qtyInputVal + '">' +
+            '<button class="qty-btn qty-plus" data-key="' + item.key + '" data-step="' + stepVal + '">+</button>' +
           '</div>' +
           '<div class="qty-label">' + qtyLabel + '</div>' +
         '</td>' +
@@ -468,9 +472,12 @@ document.addEventListener("DOMContentLoaded", function () {
   cartBody.addEventListener("input", function (event) {
     if (event.target.classList.contains("qty-input")) {
       var id = event.target.dataset.key;
+      var step = parseFloat(event.target.dataset.step || "1");
       var value = parseFloat(event.target.value || "0");
       if (cart.has(id)) {
-        cart.get(id).qty = value > 0 ? value : 0.001;
+        // If step is 30 (bag mode), the input shows bags so multiply by 30 to get kg
+        var realQty = step === 30 ? value * 30 : value;
+        cart.get(id).qty = realQty > 0 ? realQty : 0.001;
       }
       updateTotals();
     }
@@ -496,8 +503,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var plusBtn = event.target.closest(".qty-plus");
     if (plusBtn) {
       var id = plusBtn.dataset.key;
+      var step = parseFloat(plusBtn.dataset.step || "1");
       if (cart.has(id)) {
-        cart.get(id).qty += 1;
+        cart.get(id).qty += step;
         renderCart();
       }
       return;
@@ -506,11 +514,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var minusBtn = event.target.closest(".qty-minus");
     if (minusBtn) {
       var id2 = minusBtn.dataset.key;
+      var step2 = parseFloat(minusBtn.dataset.step || "1");
       if (cart.has(id2)) {
         var item = cart.get(id2);
-        item.qty = Math.max(item.qty - 1, 0.001);
-        if (item.qty <= 0.001 && item.qty < 1) {
-          // If qty goes to near-zero, remove
+        item.qty = Math.max(item.qty - step2, 0);
+        if (item.qty <= 0) {
           cart.delete(id2);
         }
         renderCart();
@@ -548,6 +556,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       } else {
         var qty = parseFloat(bagBtn.dataset.qty || "1");
+        // If this is the 30KG Bag button, multiply by the bag qty input
+        if (bagBtn.classList.contains("bag-30")) {
+          var bag30Input = document.querySelector('.bag30-qty-input[data-id="' + productId + '"]');
+          var numBags = bag30Input ? parseInt(bag30Input.value || "1", 10) : 1;
+          if (numBags < 1 || isNaN(numBags)) numBags = 1;
+          qty = 30 * numBags;
+        }
         addItem(product, qty, Object.assign({ isLoose: false }, priceOption));
       }
       return;

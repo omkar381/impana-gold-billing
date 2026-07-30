@@ -45,7 +45,13 @@
               <td>{{ loop.index }}</td>
               <td>{{ item.product_name }}</td>
               <td>{{ item.hsn_code or '' }}</td>
-              <td>{{ '%.3f'|format(item.qty) }}</td>
+              <td>
+                {% if item.unit == 'kg' and item.qty|float >= 30 and item.qty|float % 30 == 0 %}
+                  30kg/{{ '%g'|format(item.qty|float / 30) }}
+                {% else %}
+                  {{ '%.3f'|format(item.qty) }}
+                {% endif %}
+              </td>
               <td>{{ item.unit }}</td>
               <td>Rs. {{ '%.2f'|format(item.unit_price) }}</td>
               <td>{{ '%.2f'|format(item.gst_rate or 0) }}</td>
