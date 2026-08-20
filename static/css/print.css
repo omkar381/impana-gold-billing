@@ -52,9 +52,10 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 202mm;
+  min-height: auto;
   page-break-after: always;
   break-after: page;
+  margin-bottom: 20px;
 }
 
 /* Last copy — no trailing blank page */
@@ -130,20 +131,24 @@ body {
 }
 
 .shop-tagline {
-  font-size: 5.5pt;
+  font-size: 6.5pt;
   font-weight: 700;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
   display: inline-block;
-  padding: 1px 6px;
-  margin-bottom: 2px;
-  font-style: italic;
-  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .shop-address {
-  font-size: 6pt;
-  color: #555;
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #333;
   line-height: 1.4;
 }
 
@@ -191,8 +196,8 @@ body {
 }
 
 .contact-lines {
-  font-size: 6pt;
-  color: #444;
+  font-size: 7pt;
+  color: #333;
   line-height: 1.5;
   text-align: right;
   margin-top: 3px;
@@ -203,17 +208,22 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 8px;
+  padding: 4px 8px;
   background: #fff;
+  border-top: 1.5px solid var(--dark);
   border-bottom: 1.5px solid var(--dark);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
 .title-left {
-  font-size: 6pt;
-  color: #333;
-  letter-spacing: 0.2px;
+  font-size: 7.5pt;
+  color: #222;
+  letter-spacing: 0.3px;
+  border: 1.5px solid var(--dark);
+  border-radius: 3px;
+  padding: 3px 8px;
+  display: inline-block;
 }
 
 .title-center {
@@ -227,14 +237,15 @@ body {
 }
 
 .title-right {
-  font-size: 6.5pt;
+  font-size: 7.5pt;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 1px 5px;
-  border-radius: 2px;
+  border: 1.5px solid var(--accent);
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 /* ══ META GRID ═══════════════════════════════════════════════════════ */
@@ -306,18 +317,20 @@ body {
 }
 
 .items-table th {
-  padding: 2.5px 4px;
+  padding: 5px 6px;
   font-weight: 700;
-  font-size: 6.5pt;
+  font-size: 8pt;
   text-align: center;
   color: var(--dark);
   border: 1px solid var(--dark);
+  letter-spacing: 0.3px;
 }
 
 .items-table td {
-  padding: 2px 4px;
+  padding: 6px 6px;
   border-bottom: 1px solid var(--line);
-  font-size: 6.5pt;
+  font-size: 8.5pt;
+  color: #111;
 }
 
 .items-table tbody tr:nth-child(even) {
@@ -326,40 +339,53 @@ body {
 
 .items-table td.c-sr {
   text-align: center;
-  width: 22px;
+  width: 28px;
   border-right: 1px solid var(--line);
+  font-weight: 600;
 }
 
 .items-table td.c-name {
   text-align: left;
   border-right: 1px solid var(--line);
+  font-size: 9pt;
+  font-weight: 700;
+  color: #000;
 }
 
 .items-table td.c-hsn {
   text-align: center;
   width: 46px;
   border-right: 1px solid var(--line);
+  font-size: 8pt;
 }
 
 .items-table td.c-qty {
   text-align: center;
-  width: 64px;
+  width: 75px;
   border-right: 1px solid var(--line);
+  font-size: 9pt;
+  font-weight: 700;
+  color: #000;
 }
 
 .items-table td.c-rate {
   text-align: right;
-  width: 54px;
+  width: 65px;
   border-right: 1px solid var(--line);
+  font-size: 8.5pt;
+  font-weight: 600;
 }
 
 .items-table td.c-amount {
   text-align: right;
-  width: 64px;
+  width: 75px;
+  font-size: 9pt;
+  font-weight: 700;
+  color: #000;
 }
 
 .items-table th.c-sr {
-  width: 22px;
+  width: 28px;
 }
 
 .items-table th.c-hsn {
@@ -367,19 +393,19 @@ body {
 }
 
 .items-table th.c-qty {
-  width: 64px;
+  width: 75px;
 }
 
 .items-table th.c-rate {
-  width: 54px;
+  width: 65px;
 }
 
 .items-table th.c-amount {
-  width: 64px;
+  width: 75px;
 }
 
 .empty-row td {
-  height: 8px;
+  height: 20px;
   border-bottom: 1px solid #efefef;
 }
 
@@ -389,8 +415,8 @@ body {
 }
 
 .subtotal-row td {
-  padding: 2px 4px;
-  font-size: 6.5pt;
+  padding: 5px 6px;
+  font-size: 8.5pt;
 }
 
 .tax-row td {
@@ -410,27 +436,29 @@ body {
 }
 
 .total-row-table td {
-  padding: 3px 7px;
-  font-size: 7.5pt;
+  padding: 6px 8px;
+  font-size: 9pt;
   color: var(--dark);
 }
 
 .total-label {
   text-align: right;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 9.5pt;
 }
 
 .total-qty {
   text-align: center;
-  width: 95px;
-  font-weight: 700;
+  width: 105px;
+  font-weight: 800;
+  font-size: 9.5pt;
 }
 
 .total-amount {
   text-align: right;
-  width: 115px;
-  font-weight: 700;
-  font-size: 9pt;
+  width: 125px;
+  font-weight: 800;
+  font-size: 11pt;
 }
 
 .eoe {
@@ -502,21 +530,22 @@ body {
   width: 100%;
   border-collapse: collapse;
   border-top: 1.5px solid var(--dark);
+  margin-top: auto;
 }
 
 .footer-left {
   width: 55%;
-  padding: 4px 7px;
+  padding: 6px 10px;
   border-right: 1px solid var(--dark);
   vertical-align: top;
-  font-size: 6.5pt;
+  font-size: 7.5pt;
 }
 
 .footer-right {
   width: 45%;
-  padding: 4px 7px;
+  padding: 6px 10px;
   vertical-align: top;
-  font-size: 6.5pt;
+  font-size: 7.5pt;
 }
 
 .footer-section-title {
@@ -531,20 +560,20 @@ body {
 }
 
 .bank-tbl {
-  font-size: 6.5pt;
+  font-size: 7.5pt;
   border-collapse: collapse;
   flex: 1;
   margin-bottom: 2px;
 }
 
 .bank-tbl td {
-  padding: 0.5px 0;
+  padding: 1px 0;
 }
 
 .bk-label {
   font-weight: 700;
   color: #333;
-  width: 52px;
+  width: 60px;
   padding-right: 4px;
 }
 
@@ -578,47 +607,48 @@ body {
 }
 
 .terms-text {
-  font-size: 5.8pt;
+  font-size: 7pt;
   color: #555;
-  line-height: 1.35;
-  margin-bottom: 3px;
+  line-height: 1.4;
+  margin-bottom: 6px;
 }
 
 .cust-sig {
-  margin-top: 8px;
-  padding-top: 3px;
+  margin-top: 15px;
+  padding-top: 4px;
   border-top: 1px solid #aaa;
-  font-size: 6pt;
+  font-size: 7pt;
   color: #333;
+  width: 120px;
 }
 
 .declaration-text {
-  font-size: 6pt;
+  font-size: 7pt;
   color: #555;
   font-style: italic;
-  line-height: 1.3;
-  margin-bottom: 5px;
+  line-height: 1.4;
+  margin-bottom: 10px;
 }
 
 .company-sig {
-  font-size: 7.5pt;
+  font-size: 8.5pt;
   font-weight: 700;
   color: var(--accent);
-  margin-bottom: 2px;
+  margin-bottom: 25px;
   text-align: right;
 }
 
 .auth-sig {
   text-align: right;
-  font-size: 6pt;
+  font-size: 7.5pt;
   color: #333;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .sig-line {
   border-bottom: 1px solid #aaa;
-  width: 100px;
-  margin-bottom: 2px;
+  width: 140px;
+  margin-bottom: 4px;
   margin-left: auto;
 }
 
@@ -698,13 +728,12 @@ body {
     display: block;
   }
 
-  /* Each copy fills its own A5 page */
+  /* Ensure each copy fills the full A5 page so there are no overlaps */
   .invoice-page {
     width: 100%;
     display: flex;
     flex-direction: column;
-    min-height: 198mm;
-    /* A5 210mm - 2×4mm margin = 202mm, use 198mm */
+    min-height: 195mm;
     page-break-after: always;
     break-after: page;
   }
@@ -720,9 +749,9 @@ body {
     flex-direction: column;
   }
 
-  /* Make footer grow to fill remaining space */
+  /* Make footer push to bottom, but we don't need flex: 1 here anymore as margin-top: auto handles it */
   .footer-grid {
-    flex: 1;
+    margin-top: auto;
   }
 
   .cut-line {

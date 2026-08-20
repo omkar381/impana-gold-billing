@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVOICE - Padashetty Softwares</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #000000;
+            background-color: #ffffff;
+            line-height: 1.4;
+            padding: 20px;
+        }
+
+        .bill-container {
+            max-width: 750px;
+            margin: 0 auto;
+            border: 2px solid #000000;
+            padding: 25px;
+            background-color: #ffffff;
+        }
+
+        .header-section {
+            text-align: center;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .header-section h1 {
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .header-section p {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .title-bar {
+            text-align: center;
+            border-bottom: 2px solid #000000;
+            padding: 6px 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .meta-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .meta-grid td {
+            border: 1px solid #000000;
+            padding: 10px;
+            font-size: 13px;
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .meta-grid strong {
+            text-transform: uppercase;
+            font-size: 11px;
+            color: #444;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            border: 1px solid #000000;
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        .items-table td {
+            border: 1px solid #000000;
+            padding: 12px 10px;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .item-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-desc {
+            font-size: 12px;
+            color: #444;
+        }
+
+        .summary-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        .summary-grid td {
+            border: 1px solid #000000;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .summary-grid .total-row {
+            font-weight: 700;
+            font-size: 15px;
+            background-color: #f2f2f2;
+        }
+
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            align-items: end;
+            margin-top: 30px;
+        }
+
+        .notes-block {
+            font-size: 11px;
+            line-height: 1.5;
+            padding-right: 15px;
+        }
+
+        .notes-block strong {
+            display: block;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .signature-block {
+            text-align: center;
+        }
+
+        .sig-space {
+            height: 50px;
+        }
+
+        .sig-line {
+            border-top: 1px solid #000000;
+            margin-top: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .bill-container {
+                border: 2px solid #000000;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bill-container">
+        <div class="header-section">
+            <h1>Padashetty Softwares</h1>
+            <p>Custom Software Development & Cloud Integrations</p>
+            <p>Kalaburagi, Karnataka, India | Email: padashettysoftwares@gmail.com</p>
+        </div>
+
+        <div class="title-bar">
+            Receipt / Bill
+        </div>
+
+        <table class="meta-grid">
+            <tr>
+                <td>
+                    <strong>Billed To:</strong>
+                    <strong>Sri Devi Industries</strong>
+                    Brand: Impana Gold<br>
+                    Karnataka, India
+                </td>
+                <td>
+                    <strong>Bill Details:</strong>
+                    <strong>Bill No:</strong> PS-2026-001<br>
+                    <strong>Date:</strong> 20-May-2026<br>
+                    <strong>Status:</strong> --
+                </td>
+            </tr>
+        </table>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;" class="text-center">Sl.</th>
+                    <th>Particulars / Service Description</th>
+                    <th style="width: 25%;" class="text-right">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>
+                        <div class="item-title">Custom POS Billing & Stock Management Software</div>
+                        <div class="item-desc">Custom responsive retail POS checkout interface, warehouse stock
+                            reduction rules, user lockout security, and daily transaction analytics summaries.</div>
+                    </td>
+                    <td class="text-right row-amount">1,500.00</td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td>
+                        <div class="item-title">Cloud Setup & Neon DB PostgreSQL Deployment</div>
+                        <div class="item-desc">Configuration on Render servers, migration of schema, and secure load
+                            balancer mapping.</div>
+                    </td>
+                    <td class="text-right row-amount">1,000.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="summary-grid">
+            <tr>
+                <td style="width: 75%;" class="text-right">Subtotal</td>
+                <td class="text-right">₹2,500.00</td>
+            </tr>
+            <tr>
+                <td class="text-right">Tax / GST (0%)</td>
+                <td class="text-right">₹0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td class="text-right">Total Amount (Paid)</td>
+                <td class="text-right">₹2,500.00</td>
+            </tr>
+        </table>
+
+        <div class="bottom-section">
+            <div class="notes-block">
+                <strong>Declaration & Terms:</strong>
+                Certified that the particulars given above are true and correct, and represents the completed setup of
+                custom POS and cloud deployment services for Sri Devi Industries.
+            </div>
+            <div class="signature-block">
+                <div class="sig-space"></div>
+                <div class="sig-line">For Padashetty Softwares</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
