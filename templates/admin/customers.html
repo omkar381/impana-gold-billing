@@ -9,6 +9,7 @@
     <form method="get" class="filter-bar">
       <input class="input" type="text" name="q" value="{{ q or '' }}" placeholder="Search by name or phone">
       <button class="btn btn-secondary" type="submit">Search</button>
+      <a class="btn btn-secondary" href="{{ url_for('admin.export_customers', q=q) }}">Export CSV</a>
     </form>
   </div>
 

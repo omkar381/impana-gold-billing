@@ -1080,6 +1080,60 @@ def customers():
     )
 
 
+@admin_bp.route("/customers/export")
+@admin_required
+def export_customers():
+    q = request.args.get("q", "").strip()
+
+    query = db.session.query(
+        Customer,
+        func.coalesce(func.count(Bill.id), 0).label("bill_count"),
+        func.coalesce(func.sum(Bill.grand_total), 0).label("total_spent"),
+        func.max(Bill.bill_date).label("last_visit"),
+    ).outerjoin(
+        Bill,
+        and_(Bill.customer_id == Customer.id, Bill.status == "confirmed"),
+    ).filter(Customer.deleted_at == None)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(Customer.name.ilike(like), Customer.phone.ilike(like))
+        )
+
+    rows = query.group_by(Customer.id).order_by(Customer.name).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Name",
+        "Phone",
+        "Address",
+        "GSTIN",
+        "Total Bills",
+        "Total Spent",
+        "Last Visit",
+    ])
+
+    for row in rows:
+        customer = row[0]
+        last_visit = row.last_visit.strftime("%Y-%m-%d %H:%M") if row.last_visit else "Never"
+        writer.writerow([
+            customer.name,
+            customer.phone or "",
+            customer.address or "",
+            customer.gstin or "",
+            row.bill_count,
+            f"{row.total_spent:.2f}",
+            last_visit,
+        ])
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv"
+    response.headers["Content-Disposition"] = "attachment; filename=customers_export.csv"
+    return response
+
+
 @admin_bp.route("/customers/add", methods=["POST"])
 @admin_required
 def add_customer():
