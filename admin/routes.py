@@ -306,6 +306,61 @@ def products():
     )
 
 
+@admin_bp.route("/products/export")
+@admin_required
+def export_products():
+    q = request.args.get("q", "").strip()
+    category_id = request.args.get("category", "").strip()
+
+    query = Product.query.filter(Product.deleted_at == None)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Product.name.ilike(like),
+                Product.sku.ilike(like),
+                Product.barcode.ilike(like),
+            )
+        )
+    if category_id.isdigit():
+        query = query.filter(Product.category_id == int(category_id))
+
+    products_list = query.order_by(Product.name).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Name",
+        "SKU",
+        "Category",
+        "Price per Unit",
+        "Unit",
+        "Stock Qty",
+        "GST Rate",
+        "Barcode",
+        "Active",
+    ])
+
+    for p in products_list:
+        category_name = p.category.name if p.category else "Uncategorized"
+        writer.writerow([
+            p.name,
+            p.sku,
+            category_name,
+            f"{p.price_per_unit:.2f}",
+            p.unit,
+            f"{p.stock_qty:.3f}",
+            f"{p.gst_rate}%",
+            p.barcode or "",
+            "Yes" if p.is_active else "No",
+        ])
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv"
+    response.headers["Content-Disposition"] = "attachment; filename=products_export.csv"
+    return response
+
+
 @admin_bp.route("/products/add", methods=["POST"])
 @admin_required
 def add_product():

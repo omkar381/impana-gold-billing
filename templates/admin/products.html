@@ -15,6 +15,7 @@
         {% endfor %}
       </select>
       <button class="btn btn-secondary" type="submit">Filter</button>
+      <a class="btn btn-secondary" href="{{ url_for('admin.export_products', q=q, category=selected_category) }}">Export CSV</a>
     </form>
   </div>
 
