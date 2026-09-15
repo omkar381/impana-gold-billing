@@ -203,42 +203,79 @@ body {
   margin-top: 3px;
 }
 
-/* ══ GSTIN BAND — 3-column flex so TAX INVOICE is always truly centered ══ */
+/* ══ REGISTRATION BAR — GSTIN / FSSAI / ISO on one clean line ═════════ */
+.reg-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  background: #fff;
+  border-top: 1.5px solid var(--dark);
+  border-bottom: 1px solid var(--line);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.reg-bar-items {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.reg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.reg-lbl {
+  font-size: 6.5pt;
+  font-weight: 800;
+  color: var(--dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reg-val {
+  font-size: 6.5pt;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.3px;
+}
+
+.reg-sep {
+  font-size: 7pt;
+  color: #aaa;
+  margin: 0 8px;
+}
+
+/* ══ TITLE BAR — TAX INVOICE centred + ORIGINAL badge ════════════ */
 .title-bar {
   display: flex;
   align-items: center;
   padding: 4px 8px;
   background: #fff;
-  border-top: 1.5px solid var(--dark);
   border-bottom: 1.5px solid var(--dark);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
-/* Left column — takes 1/3 of the bar */
+/* Spacer — pushes center to middle */
 .title-bar-left {
   flex: 1;
-  font-size: 7.5pt;
-  color: #222;
-  letter-spacing: 0.3px;
-  border: 1.5px solid var(--dark);
-  border-radius: 3px;
-  padding: 3px 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
 }
 
-/* Center column — fixed natural width, centered in the bar */
+/* TAX INVOICE — centred */
 .title-bar-center {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Right column — pushes ORIGINAL/DUPLICATE to the far right */
+/* ORIGINAL / DUPLICATE badge — pushed to the right */
 .title-bar-right {
   flex: 1;
   display: flex;
@@ -246,37 +283,10 @@ body {
   align-items: center;
 }
 
-/* ISO stacked box: ISO text on top, number below */
-.iso-box {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1.5px solid var(--dark);
-  border-radius: 3px;
-  padding: 1px 5px;
-  line-height: 1.1;
-  margin-left: 4px;
-}
-
-.iso-label {
-  font-size: 7pt;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--dark);
-  letter-spacing: 1px;
-}
-
-.iso-number {
-  font-size: 5.5pt;
-  font-weight: 600;
-  color: #444;
-  white-space: nowrap;
-}
-
 .title-center {
-  font-size: 8pt;
+  font-size: 9pt;
   font-weight: 800;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   color: var(--dark);
   text-transform: uppercase;
   text-decoration: underline;

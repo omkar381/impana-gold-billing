@@ -92,18 +92,16 @@
 
         </div>{# end inv-header #}
 
-        {# ── ROW 2: GSTIN BAR ─────────────────────────────────────── #}
-        <div class="title-bar">
-          <div class="title-bar-left">
-            {% if gstin %}<strong>GSTIN:</strong> {{ gstin }}{% endif %}
-            {% if fssai %} &nbsp;|&nbsp; <strong>FSSAI:</strong> {{ fssai }}{% endif %}
-            {% if iso_cert %}
-            <span class="iso-box">
-              <span class="iso-label">ISO</span>
-              <span class="iso-number">{{ iso_cert }}</span>
-            </span>
-            {% endif %}
+        {# ── ROW 2: REGISTRATION BAR + TITLE BAR ──────────────────── #}
+        <div class="reg-bar">
+          <div class="reg-bar-items">
+            {% if gstin %}<span class="reg-item"><span class="reg-lbl">GSTIN</span> <span class="reg-val">{{ gstin }}</span></span>{% endif %}
+            {% if fssai %}<span class="reg-sep">|</span><span class="reg-item"><span class="reg-lbl">FSSAI</span> <span class="reg-val">{{ fssai }}</span></span>{% endif %}
+            {% if iso_cert %}<span class="reg-sep">|</span><span class="reg-item"><span class="reg-lbl">ISO</span> <span class="reg-val">{{ iso_cert }}</span></span>{% endif %}
           </div>
+        </div>
+        <div class="title-bar">
+          <div class="title-bar-left"></div>
           <div class="title-bar-center"><span class="title-center">TAX INVOICE</span></div>
           <div class="title-bar-right"><span class="title-right">{{ copy_label }}</span></div>
         </div>
