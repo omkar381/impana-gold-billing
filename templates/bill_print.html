@@ -85,7 +85,7 @@
             <div class="contact-lines">
               {% if settings.get('phone2') %}📞 {{ settings.get('phone2') }}<br>{% elif settings.get('phone') and
               settings.get('phone') != '9243251111' %}📞 {{ settings.get('phone') }}<br>{% endif %}
-              {% if settings.get('website') %}🌐 {{ settings.get('website') }}<br>{% endif %}
+              🌐 impanagold.in<br>
               {% if settings.get('email') %}✉ {{ settings.get('email') }}{% endif %}
             </div>
           </div>
@@ -94,13 +94,18 @@
 
         {# ── ROW 2: GSTIN BAR ─────────────────────────────────────── #}
         <div class="title-bar">
-          <div class="title-left">
+          <div class="title-bar-left">
             {% if gstin %}<strong>GSTIN:</strong> {{ gstin }}{% endif %}
             {% if fssai %} &nbsp;|&nbsp; <strong>FSSAI:</strong> {{ fssai }}{% endif %}
-            {% if iso_cert %} &nbsp;|&nbsp; <strong>ISO:</strong> {{ iso_cert }}{% endif %}
+            {% if iso_cert %}
+            <span class="iso-box">
+              <span class="iso-label">ISO</span>
+              <span class="iso-number">{{ iso_cert }}</span>
+            </span>
+            {% endif %}
           </div>
-          <div class="title-center">TAX INVOICE</div>
-          <div class="title-right">{{ copy_label }}</div>
+          <div class="title-bar-center"><span class="title-center">TAX INVOICE</span></div>
+          <div class="title-bar-right"><span class="title-right">{{ copy_label }}</span></div>
         </div>
 
         {# ── ROW 3: CUSTOMER + INVOICE META ──────────────────────── #}
@@ -188,7 +193,7 @@
               <td class="c-hsn">{{ item.hsn_code or '' }}</td>
               <td class="c-qty">
                 {% if item.unit == 'kg' and item.qty|float >= 30 and item.qty|float % 30 == 0 %}
-                30kg/{{ '%g'|format(item.qty|float / 30) }}
+                30kg/{{ '%g'|format(item.qty|float / 30) }} BAGS
                 {% else %}
                 {{ '%g'|format(item.qty|float) }} {{ item.unit|upper }}
                 {% endif %}
@@ -249,9 +254,14 @@
         {# ── ROW 5: GRAND TOTAL ────────────────────────────────────── #}
         <table class="total-row-table">
           <tr>
-            <td class="total-label"><strong>TOTAL</strong></td>
-            <td class="total-qty"><strong>{{ '%g'|format(total_qty.val) }} {{ bill.items[0].unit|upper if bill.items
-                else '' }}</strong></td>
+            <td class="total-label"><strong>TOTAL BAGS</strong></td>
+            <td class="total-qty"><strong>
+              {% if bill.items and bill.items[0].unit == 'kg' %}
+                {{ '%g'|format(total_qty.val / 30) }} BAGS
+              {% else %}
+                {{ '%g'|format(total_qty.val) }} {{ bill.items[0].unit|upper if bill.items else '' }}
+              {% endif %}
+            </strong></td>
             <td class="total-amount">
               <strong>₹ {{ '%.2f'|format(bill.grand_total) }}</strong>
               <div class="eoe">(E &amp; O.E.)</div>
@@ -307,6 +317,7 @@
             <td class="footer-right" valign="top">
               <div class="declaration-text">{{ declaration }}</div>
               <div class="company-sig">{{ sig_name }}</div>
+              <div class="sig-stamp-gap"></div>
               <div class="auth-sig">
                 <div class="sig-line"></div>
                 <strong>Authorised Signatory</strong>
