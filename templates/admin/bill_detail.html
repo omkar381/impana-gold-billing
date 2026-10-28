@@ -17,11 +17,14 @@
       <div>
         <div><strong>Date:</strong> {{ bill.bill_date.strftime('%d-%m-%Y %H:%M') }}</div>
         <div><strong>Operator:</strong> {{ bill.operator.username if bill.operator else '' }}</div>
-        <div><strong>Status:</strong> {{ bill.status }}</div>
+        <div><strong>Status:</strong> <span class="status status-{{ bill.status }}">{{ bill.status|capitalize }}</span></div>
       </div>
       <div>
         <div><strong>Customer:</strong> {{ bill.customer.name if bill.customer else 'Walk-in' }}</div>
         <div><strong>Phone:</strong> {{ bill.customer.phone if bill.customer else '' }}</div>
+        {% if bill.marketing_officer_name %}
+        <div><strong>Marketing Officer:</strong> {{ bill.marketing_officer_name }}{% if bill.marketing_officer_phone %} ({{ bill.marketing_officer_phone }}){% endif %}</div>
+        {% endif %}
       </div>
     </div>
 

@@ -58,6 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var customerGstin = document.getElementById("customer-gstin");
   var customerId = document.getElementById("customer-id");
   var notesEl = document.getElementById("bill-notes");
+  var officerSelect = document.getElementById("marketing-officer");
 
   var savePrintBtn = document.getElementById("save-print");
   var saveDraftBtn = document.getElementById("save-draft");
@@ -289,6 +290,7 @@ document.addEventListener("DOMContentLoaded", function () {
       customer_phone: customerPhone.value || "",
       customer_address: customerAddress.value || "",
       customer_gstin: customerGstin.value || "",
+      marketing_officer_id: officerSelect ? (officerSelect.value || null) : null,
       apply_overall_gst: overallGstEl ? overallGstEl.checked : false,
       overall_gst_rate: 5,
       status: status,
@@ -302,7 +304,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     clearError();
     savePrintBtn.disabled = true;
-    savePrintBtn.textContent = "⏳ Saving...";
+    savePrintBtn.textContent = "Saving…";
 
     fetch("/bill/create", {
       method: "POST",
@@ -326,7 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(function (err) {
         showError(err.message);
         savePrintBtn.disabled = false;
-        savePrintBtn.textContent = "💾 Save & Print (F4)";
+        savePrintBtn.textContent = "Save & Print (F4)";
       });
   }
 

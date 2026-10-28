@@ -12,6 +12,7 @@ Strategy:
 
 import re
 from datetime import datetime, date
+from utils.timeutil import now_ist
 from typing import Optional
 
 
@@ -36,7 +37,7 @@ def generate_bill_number(
     from extensions import db
     from models import Bill
 
-    now = datetime.utcnow()
+    now = now_ist()
 
     # Build the date portion based on reset policy
     if reset_policy == "daily":

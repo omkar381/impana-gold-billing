@@ -46,6 +46,18 @@ def create_app(config_name: str = None) -> Flask:
     def load_user(user_id: str):
         return db.session.get(AdminUser, int(user_id))
 
+    # ── Schema safeguard (adds Marketing Officer table/columns if missing) ──
+    from utils.schema import ensure_marketing_officer_schema
+    with app.app_context():
+        ensure_marketing_officer_schema(db)
+
+    # ── Brand logo available to every template ─────────────────────────────
+    @app.context_processor
+    def inject_brand():
+        from flask import url_for
+        logo = "img/impana-logo.png"
+        return {"brand_logo_url": url_for("static", filename=logo)}
+
     # ── Blueprints ─────────────────────────────────────────────────────────
     from auth import auth_bp
     from billing import billing_bp
@@ -76,6 +88,7 @@ def create_app(config_name: str = None) -> Flask:
         from models import (
             AdminUser, BusinessSettings, Category, Product,
             Customer, Bill, BillItem, DailySummary, AuditLog, InventoryTransaction,
+            MarketingOfficer,
         )
         return {
             "db": db,
@@ -89,6 +102,7 @@ def create_app(config_name: str = None) -> Flask:
             "DailySummary": DailySummary,
             "AuditLog": AuditLog,
             "InventoryTransaction": InventoryTransaction,
+            "MarketingOfficer": MarketingOfficer,
         }
 
     return app

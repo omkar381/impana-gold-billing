@@ -13,6 +13,7 @@ import os
 import secrets
 import uuid
 from datetime import datetime, date, timedelta
+from utils.timeutil import now_ist, today_ist
 from decimal import Decimal
 
 import bcrypt
@@ -29,10 +30,12 @@ from extensions import db
 from forms import (
     ProductForm, CustomerForm, BusinessSettingsForm,
     StaffAddForm, StaffPasswordResetForm, BillCancelForm, StockAdjustForm,
+    OfficerForm,
 )
 from models import (
     AdminUser, BusinessSettings, Category, Product, Customer,
     Bill, BillItem, DailySummary, AuditLog, InventoryTransaction,
+    MarketingOfficer,
 )
 from utils.audit import log_action
 from utils.stock import apply_stock_change
@@ -163,7 +166,7 @@ def upsert_daily_summary(bill_date: date) -> None:
     summary.cash_total = results.cash_total or 0
     summary.upi_total = results.upi_total or 0
     summary.card_total = results.card_total or 0
-    summary.computed_at = datetime.utcnow()
+    summary.computed_at = now_ist()
 
 
 # -- Dashboard --
@@ -171,7 +174,7 @@ def upsert_daily_summary(bill_date: date) -> None:
 @admin_bp.route("/")
 @admin_required
 def dashboard():
-    today = date.today()
+    today = today_ist()
 
     metrics = (
         db.session.query(
@@ -204,13 +207,13 @@ def dashboard():
         .group_by(db.func.date(Bill.bill_date))
         .all()
     )
-    weekly_map = {r.day: float(r.total) for r in weekly_rows}
+    weekly_map = {str(r.day)[:10]: float(r.total) for r in weekly_rows}
     weekly_data = []
     for i in range(7):
         day = start_day + timedelta(days=i)
         weekly_data.append({
             "date": day,
-            "total": weekly_map.get(day, 0),
+            "total": weekly_map.get(day.isoformat(), 0),
         })
 
     # Top 5 products by quantity sold this month
@@ -520,7 +523,7 @@ def delete_product(product_id: int):
         flash("Product already deleted.", "warning")
         return redirect(url_for("admin.products"))
 
-    product.deleted_at = datetime.utcnow()
+    product.deleted_at = now_ist()
     product.is_active = False
 
     try:
@@ -780,7 +783,7 @@ def admin_cancel_bill(bill_id: int):
 
     old_status = bill.status
     bill.status = "cancelled"
-    bill.cancelled_at = datetime.utcnow()
+    bill.cancelled_at = now_ist()
     bill.cancel_reason = form.cancel_reason.data.strip()
 
     try:
@@ -858,7 +861,7 @@ def export_bills():
 
 
 def _report_date_range(args):
-    today = date.today()
+    today = today_ist()
     start_date = parse_date(args.get("start_date"))
     end_date = parse_date(args.get("end_date"))
 
@@ -1327,7 +1330,7 @@ def delete_customer(customer_id: int):
         flash("Customer already deleted.", "warning")
         return redirect(url_for("admin.customers"))
 
-    customer.deleted_at = datetime.utcnow()
+    customer.deleted_at = now_ist()
 
     try:
         log_action(
@@ -1673,7 +1676,7 @@ def gst_report():
     settings = get_all_settings()
 
     # Default: current month
-    today = date.today()
+    today = today_ist()
     default_from = today.replace(day=1).strftime("%Y-%m-%d")
     default_to = today.strftime("%Y-%m-%d")
 
@@ -1702,14 +1705,14 @@ def gst_report():
         date_from_display=date_from.strftime("%d %b %Y"),
         date_to_display=date_to.strftime("%d %b %Y"),
         settings=settings,
-        generated_at=datetime.now().strftime("%d-%b-%Y %I:%M %p"),
+        generated_at=now_ist().strftime("%d-%b-%Y %I:%M %p"),
     )
 
 
 @admin_bp.route("/gst-report/csv")
 @admin_required
 def gst_report_csv():
-    today = date.today()
+    today = today_ist()
     date_from_str = request.args.get("date_from", today.replace(day=1).strftime("%Y-%m-%d"))
     date_to_str = request.args.get("date_to", today.strftime("%Y-%m-%d"))
 
@@ -1719,8 +1722,8 @@ def gst_report_csv():
             hour=23, minute=59, second=59
         )
     except ValueError:
-        date_from = datetime.now().replace(day=1)
-        date_to = datetime.now()
+        date_from = now_ist().replace(day=1)
+        date_to = now_ist()
 
     rows, summary = _gst_report_data(date_from, date_to)
 
@@ -1759,7 +1762,7 @@ def gst_report_csv():
     ])
     writer.writerow([])
     writer.writerow(["Total Bills:", summary["total_bills"]])
-    writer.writerow(["Generated:", datetime.now().strftime("%d-%b-%Y %I:%M %p")])
+    writer.writerow(["Generated:", now_ist().strftime("%d-%b-%Y %I:%M %p")])
 
     output.seek(0)
     filename = f"GST_Report_{date_from.strftime('%Y%m%d')}_{date_to.strftime('%Y%m%d')}.csv"
@@ -1775,7 +1778,7 @@ def gst_report_print():
     """Printable/PDF version of the GST report."""
     settings = get_all_settings()
 
-    today = date.today()
+    today = today_ist()
     date_from_str = request.args.get("date_from", today.replace(day=1).strftime("%Y-%m-%d"))
     date_to_str = request.args.get("date_to", today.strftime("%Y-%m-%d"))
 
@@ -1785,8 +1788,8 @@ def gst_report_print():
             hour=23, minute=59, second=59
         )
     except ValueError:
-        date_from = datetime.now().replace(day=1)
-        date_to = datetime.now()
+        date_from = now_ist().replace(day=1)
+        date_to = now_ist()
 
     rows, summary = _gst_report_data(date_from, date_to)
 
@@ -1797,5 +1800,121 @@ def gst_report_print():
         date_from=date_from.strftime("%d %b %Y"),
         date_to=date_to.strftime("%d %b %Y"),
         settings=settings,
-        generated_at=datetime.now().strftime("%d-%b-%Y %I:%M %p"),
+        generated_at=now_ist().strftime("%d-%b-%Y %I:%M %p"),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Marketing officers
+# ═══════════════════════════════════════════════════════════════════════════
+
+@admin_bp.route("/officers")
+@admin_required
+def officers():
+    rows = MarketingOfficer.query.order_by(
+        MarketingOfficer.is_default.desc(), MarketingOfficer.name
+    ).all()
+    return render_template("admin/officers.html", officers=rows, form=OfficerForm())
+
+
+@admin_bp.route("/officers/add", methods=["POST"])
+@admin_required
+def add_officer():
+    form = OfficerForm()
+    if not form.validate_on_submit():
+        flash("Please enter the officer's name.", "danger")
+        return redirect(url_for("admin.officers"))
+
+    officer = MarketingOfficer(
+        name=form.name.data.strip(),
+        phone=(form.phone.data or "").strip() or None,
+        is_default=MarketingOfficer.query.count() == 0,
+    )
+    try:
+        db.session.add(officer)
+        db.session.flush()
+        log_action(
+            actor_id=current_user.id, action="CREATE", entity="marketing_officer",
+            entity_id=officer.id, new_val={"name": officer.name, "phone": officer.phone},
+            ip_address=request.remote_addr,
+        )
+        db.session.commit()
+        flash("Marketing officer added.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Could not add officer: {exc}", "danger")
+    return redirect(url_for("admin.officers"))
+
+
+@admin_bp.route("/officers/<int:officer_id>/edit", methods=["POST"])
+@admin_required
+def edit_officer(officer_id: int):
+    officer = db.session.get(MarketingOfficer, officer_id)
+    if not officer:
+        abort(404)
+    form = OfficerForm()
+    if not form.validate_on_submit():
+        flash("Name is required.", "danger")
+        return redirect(url_for("admin.officers"))
+
+    old = {"name": officer.name, "phone": officer.phone}
+    officer.name = form.name.data.strip()
+    officer.phone = (form.phone.data or "").strip() or None
+    try:
+        log_action(
+            actor_id=current_user.id, action="UPDATE", entity="marketing_officer",
+            entity_id=officer.id, old_val=old,
+            new_val={"name": officer.name, "phone": officer.phone},
+            ip_address=request.remote_addr,
+        )
+        db.session.commit()
+        flash("Officer details saved.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Could not save officer: {exc}", "danger")
+    return redirect(url_for("admin.officers"))
+
+
+@admin_bp.route("/officers/<int:officer_id>/default", methods=["POST"])
+@admin_required
+def default_officer(officer_id: int):
+    officer = db.session.get(MarketingOfficer, officer_id)
+    if not officer:
+        abort(404)
+    MarketingOfficer.query.update({MarketingOfficer.is_default: False})
+    officer.is_default = True
+    officer.is_active = True
+    db.session.commit()
+    flash(f"{officer.name} is now the default officer on new bills.", "success")
+    return redirect(url_for("admin.officers"))
+
+
+@admin_bp.route("/officers/<int:officer_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_officer(officer_id: int):
+    officer = db.session.get(MarketingOfficer, officer_id)
+    if not officer:
+        abort(404)
+    if officer.is_default and officer.is_active:
+        flash("Set another officer as default before deactivating this one.", "warning")
+        return redirect(url_for("admin.officers"))
+    officer.is_active = not officer.is_active
+    db.session.commit()
+    flash("Officer " + ("activated." if officer.is_active else "deactivated."), "success")
+    return redirect(url_for("admin.officers"))
+
+
+@admin_bp.route("/officers/<int:officer_id>/delete", methods=["POST"])
+@admin_required
+def delete_officer(officer_id: int):
+    officer = db.session.get(MarketingOfficer, officer_id)
+    if not officer:
+        abort(404)
+    if officer.is_default:
+        flash("Set another officer as default before deleting this one.", "warning")
+        return redirect(url_for("admin.officers"))
+    # Bills keep their own copy of the name/phone, so past invoices are unaffected.
+    db.session.delete(officer)
+    db.session.commit()
+    flash("Officer deleted.", "success")
+    return redirect(url_for("admin.officers"))

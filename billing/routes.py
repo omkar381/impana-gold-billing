@@ -13,6 +13,7 @@ Routes:
 
 import json
 from datetime import datetime, date
+from utils.timeutil import now_ist, today_ist
 from decimal import Decimal, ROUND_HALF_UP
 from collections import defaultdict
 
@@ -26,7 +27,7 @@ from billing import billing_bp
 from extensions import db
 from models import (
     Product, Category, Customer, Bill, BillItem,
-    DailySummary, BusinessSettings,
+    DailySummary, BusinessSettings, MarketingOfficer,
 )
 from forms import BillCancelForm
 from utils.bill_number import generate_bill_number
@@ -100,7 +101,7 @@ def upsert_daily_summary(bill_date: date) -> None:
     summary.cash_total = results.cash_total or 0
     summary.upi_total = results.upi_total or 0
     summary.card_total = results.card_total or 0
-    summary.computed_at = datetime.utcnow()
+    summary.computed_at = now_ist()
 
 
 def compute_hsn_breakup(bill_items):
@@ -149,11 +150,17 @@ def pos():
         .all()
     )
     settings = get_all_settings()
+    officers = (
+        MarketingOfficer.query.filter(MarketingOfficer.is_active == True)
+        .order_by(MarketingOfficer.is_default.desc(), MarketingOfficer.name)
+        .all()
+    )
     return render_template(
         "index.html",
         categories=categories,
         products=products,
         settings=settings,
+        officers=officers,
     )
 
 
@@ -216,6 +223,15 @@ def create_bill():
             customer.address = customer_address
         if customer_gstin:
             customer.gstin = customer_gstin
+
+    # ── Marketing officer (optional) — snapshot name/phone onto the bill ──
+    officer = None
+    try:
+        officer_id = int(data.get("marketing_officer_id") or 0)
+    except (TypeError, ValueError):
+        officer_id = 0
+    if officer_id:
+        officer = db.session.get(MarketingOfficer, officer_id)
 
     # ── Calculate totals ──────────────────────────────────────────────────
     subtotal = Decimal("0.00")
@@ -331,6 +347,8 @@ def create_bill():
         change_returned=change_returned,
         notes=data.get("notes", ""),
         status=status,
+        marketing_officer_name=officer.name if officer else None,
+        marketing_officer_phone=(officer.phone or None) if officer else None,
     )
 
     try:
@@ -352,7 +370,7 @@ def create_bill():
                     reference_id=bill.id,
                     note=f"Bill {bill.bill_number}",
                 )
-            upsert_daily_summary(bill.bill_date.date() if hasattr(bill.bill_date, 'date') else date.today())
+            upsert_daily_summary(bill.bill_date.date() if hasattr(bill.bill_date, 'date') else today_ist())
 
         log_action(
             actor_id=current_user.id,
@@ -477,7 +495,7 @@ def cancel_bill(bill_id):
     if form.validate_on_submit():
         old_status = bill.status
         bill.status = "cancelled"
-        bill.cancelled_at = datetime.utcnow()
+        bill.cancelled_at = now_ist()
         bill.cancel_reason = form.cancel_reason.data
 
         try:

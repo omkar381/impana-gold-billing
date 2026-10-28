@@ -19,7 +19,7 @@
     </form>
   </div>
 
-  <div class="admin-grid">
+  <div class="admin-grid grid-form-table">
     <div class="card">
       <h2>{% if edit_product %}Edit Product{% else %}Add Product{% endif %}</h2>
       <form method="post" enctype="multipart/form-data" action="{% if edit_product %}{{ url_for('admin.edit_product', product_id=edit_product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}" class="form-grid">
@@ -101,7 +101,7 @@
               <th>Weight</th>
               <th>Unit</th>
               <th>Stock</th>
-              <th>Price</th>
+              <th class="num">Price</th>
               <th>GST</th>
               <th>Status</th>
               <th>Actions</th>
@@ -111,21 +111,21 @@
             {% for product in products %}
               <tr>
                 <td>{{ product.sku }}</td>
-                <td>{{ product.name }}</td>
+                <td class="strong">{{ product.name }}</td>
                 <td>{{ product.category.name if product.category else 'Uncategorized' }}</td>
                 <td>
                   {% if product.image_path %}
                     <img class="product-thumb" src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
                   {% else %}
-                    <span class="product-thumb placeholder">No image</span>
+                    <img class="product-thumb is-fallback" src="{{ brand_logo_url }}" alt="">
                   {% endif %}
                 </td>
                 <td>{{ product.weight_grams or '-' }}</td>
                 <td>{{ product.unit }}</td>
                 <td>{{ '%.3f'|format(product.stock_qty or 0) }}</td>
-                <td>Rs. {{ '%.2f'|format(product.price_per_unit) }}</td>
+                <td class="num strong">₹ {{ '%.2f'|format(product.price_per_unit) }}</td>
                 <td>{{ '%.2f'|format(product.gst_rate or 0) }}%</td>
-                <td>{{ 'Active' if product.is_active else 'Inactive' }}</td>
+                <td><span class="status {{ 'status-confirmed' if product.is_active else 'status-muted' }}">{{ 'Active' if product.is_active else 'Inactive' }}</span></td>
                 <td class="row-actions">
                   <a class="btn btn-link" href="{{ url_for('admin.edit_product', product_id=product.id) }}">Edit</a>
                   <form method="post" action="{{ url_for('admin.toggle_product', product_id=product.id) }}" class="inline-form">

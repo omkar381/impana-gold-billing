@@ -8,7 +8,7 @@
     <h1>Staff Management</h1>
   </div>
 
-  <div class="admin-grid">
+  <div class="admin-grid grid-form-table">
     <div class="card">
       <h2>Add Staff</h2>
       <form method="post" action="{{ url_for('admin.add_staff') }}" class="form-grid">
@@ -46,8 +46,8 @@
             {% for user in users %}
               <tr>
                 <td>{{ user.username }}</td>
-                <td>{{ user.role }}</td>
-                <td>{{ 'Active' if user.is_active else 'Inactive' }}</td>
+                <td><span class="pill">{{ user.role }}</span></td>
+                <td><span class="status {{ 'status-confirmed' if user.is_active else 'status-muted' }}">{{ 'Active' if user.is_active else 'Inactive' }}</span></td>
                 <td>{{ user.last_login.strftime('%d-%m-%Y %H:%M') if user.last_login else '-' }}</td>
                 <td class="row-actions">
                   {% if user.role != 'superadmin' %}

@@ -9,6 +9,7 @@ Security features:
 """
 
 from datetime import datetime, timedelta
+from utils.timeutil import now_ist
 import bcrypt
 
 from flask import render_template, redirect, url_for, flash, request
@@ -60,7 +61,7 @@ def login():
         # --- Success ---
         user.failed_login_count = 0
         user.locked_until = None
-        user.last_login = datetime.utcnow()
+        user.last_login = now_ist()
         db.session.commit()
 
         login_user(user, remember=False)

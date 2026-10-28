@@ -1,36 +1,26 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
-{% block title %}POS - Impana Gold{% endblock %}
-
-{% block extra_head %}
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-{% endblock %}
+{% block title %}Billing - Impana Gold{% endblock %}
+{% block body_class %}app-body pos-body{% endblock %}
 
 {% block content %}
 <section id="pos-app" class="pos-layout" data-gst-enabled="{{ 'true' if settings.get('gst_enabled', 'true') == 'true' else 'false' }}">
   <div class="pos-left">
-    <div class="panel">
-      <div class="panel-header pos-branding">
-        {% set logo_path = settings.get('logo_path') %}
-        {% if logo_path %}
-          <img src="{{ url_for('static', filename=logo_path) }}" alt="Shop Logo" class="pos-shop-logo">
-        {% endif %}
-        <div>
-          <h1>{{ settings.get('shop_name', 'Impana Gold') }}</h1>
-          <p class="muted">Fast billing and cart management</p>
+    <div class="panel catalog-panel">
+      <div class="catalog-toolbar">
+        <div class="search-bar">
+          {{ icon('search', 18, 'search-ico') }}
+          <input id="product-search" class="input" type="text" placeholder="Search product by name, SKU or barcode" autocomplete="off">
+          <kbd class="search-kbd">F2</kbd>
         </div>
-      </div>
 
-      <div class="search-bar">
-        <input id="product-search" class="input" type="text" placeholder="🔍 Search by name, SKU, or barcode (F2)">
-      </div>
-
-      <div class="category-tabs" id="category-tabs">
-        <button class="tab active" data-category="all">All</button>
-        {% for category in categories %}
-          <button class="tab" data-category="{{ category.id }}">{{ category.name }}</button>
-        {% endfor %}
+        <div class="category-tabs" id="category-tabs">
+          <button class="tab active" data-category="all">All</button>
+          {% for category in categories %}
+            <button class="tab" data-category="{{ category.id }}">{{ category.name }}</button>
+          {% endfor %}
+        </div>
       </div>
 
       <div class="product-grid" id="product-grid">
@@ -48,43 +38,55 @@
             data-category="{{ product.category_id or '' }}"
             data-weight="{{ product.weight_grams or '' }}"
           >
-            {% if product.image_path %}
-              <img class="product-image" src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
-            {% else %}
-              <div class="product-image placeholder">{{ product.name[:1]|upper }}</div>
-            {% endif %}
-            <div class="product-name">{{ product.name }}</div>
-            <div class="product-meta">
-              <span>{% if product.weight_grams %}{{ product.weight_grams }}g{% endif %} {{ product.unit }}</span>
-              <span class="product-price">₹{{ '%.2f'|format(product.price_per_unit) }}/{{ product.unit }}</span>
+            <div class="product-media">
+              {% if product.image_path %}
+                <img class="product-image" src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+              {% else %}
+                <img class="product-image is-fallback" src="{{ brand_logo_url }}" alt="{{ product.name }}">
+              {% endif %}
             </div>
-            {% if product.hsn_code %}
-              <div class="product-hsn">HSN: {{ product.hsn_code }}</div>
-            {% endif %}
+
+            <div class="product-body">
+              <div class="product-name">{{ product.name }}</div>
+              <div class="product-meta">
+                <span>{% if product.weight_grams %}{{ product.weight_grams }} g &middot; {% endif %}{{ product.unit }}{% if product.hsn_code %} &middot; HSN {{ product.hsn_code }}{% endif %}</span>
+                <span class="product-price">₹{{ '%.2f'|format(product.price_per_unit) }}<small>/{{ product.unit }}</small></span>
+              </div>
+            </div>
+
             <div class="product-actions">
               {% if product.unit == 'kg' %}
                 <div class="rate-override-row">
-                  <span class="rate-override-label">₹/kg</span>
+                  <span class="rate-override-label">Rate (₹/kg)</span>
                   <input class="rate-override-input" type="number" min="0" step="0.01"
                          placeholder="{{ '%.2f'|format(product.price_per_unit) }}"
                          data-id="{{ product.id }}"
                          title="Override price per kg for this bill">
                 </div>
-                <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 kg">1 kg</button>
-                <div class="bag30-row">
-                  <input class="bag30-qty-input" type="number" min="1" step="1" value="1" data-id="{{ product.id }}" title="Number of 30kg bags">
-                  <button class="bag-btn bag-30" data-id="{{ product.id }}" data-qty="30" title="Add 30 kg bag">30KG Bag</button>
+                <div class="action-row">
+                  <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 kg">+ 1 kg</button>
+                  <div class="bag30-row">
+                    <input class="bag30-qty-input" type="number" min="1" step="1" value="1" data-id="{{ product.id }}" title="Number of 30kg bags">
+                    <button class="bag-btn bag-30" data-id="{{ product.id }}" data-qty="30" title="Add 30 kg bag">× 30 kg Bag</button>
+                  </div>
                 </div>
-                <button class="bag-btn bag-loose" data-id="{{ product.id }}" data-loose="1" title="Add loose qty">Loose</button>
+                <div class="action-row">
+                  <button class="bag-btn bag-loose" data-id="{{ product.id }}" data-loose="1" title="Add loose qty">Loose</button>
+                  <input class="quick-qty-input" type="number" min="0.001" step="0.001" placeholder="Qty" data-id="{{ product.id }}">
+                  <button class="bag-btn bag-custom" data-id="{{ product.id }}" title="Add custom qty">Add</button>
+                </div>
               {% else %}
-                <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 {{ product.unit }}">+ 1</button>
+                <div class="action-row">
+                  <button class="bag-btn bag-1" data-id="{{ product.id }}" data-qty="1" title="Add 1 {{ product.unit }}">+ 1</button>
+                  <input class="quick-qty-input" type="number" min="0.001" step="0.001" placeholder="Qty" data-id="{{ product.id }}">
+                  <button class="bag-btn bag-custom" data-id="{{ product.id }}" title="Add custom qty">Add</button>
+                </div>
               {% endif %}
-              <input class="quick-qty-input" type="number" min="0.001" step="0.001" placeholder="Qty" data-id="{{ product.id }}">
-              <button class="bag-btn bag-custom" data-id="{{ product.id }}" title="Add custom qty">Add</button>
             </div>
           </div>
         {% endfor %}
       </div>
+
       <div class="pos-footer">
         Powered by <strong>Padashetty Softwares</strong>
       </div>
@@ -93,112 +95,136 @@
 
   <div class="pos-right">
     <div class="panel cart-panel">
-      <div class="panel-header">
-        <h2>🛒 Current Cart</h2>
-        <span id="cart-count" class="badge">0 items</span>
+      <div class="cart-header">
+        <div class="cart-title">
+          <h2>Current Bill</h2>
+          <span id="cart-count" class="cart-count">0 items</span>
+        </div>
+        <button id="clear-cart" class="btn btn-ghost btn-sm" type="button" title="Clear cart">{{ icon('trash', 15) }}<span>Clear</span></button>
       </div>
 
-      <div id="pos-error" class="alert alert-danger" hidden></div>
+      <div class="cart-scroll">
+        <div id="pos-error" class="alert alert-danger" hidden></div>
 
-      <div class="cart-table-wrap">
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Rate</th>
-              <th>Qty</th>
-              <th>Total</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="cart-body"></tbody>
-        </table>
-        <div id="cart-empty-msg" class="cart-empty">
-          <div class="cart-empty-icon">📦</div>
-          <p>Cart is empty — click a product to add</p>
-        </div>
-      </div>
-
-      <div class="cart-options">
-        <div class="field-group">
-          <label>Discount</label>
-          <div class="inline-group">
-            <label class="radio">
-              <input type="radio" name="discount-type" value="flat" checked>
-              <span>Flat ₹</span>
-            </label>
-            <label class="radio">
-              <input type="radio" name="discount-type" value="percent">
-              <span>%</span>
-            </label>
-            <input id="discount-amount" type="number" class="input small" value="0" min="0" step="0.01">
+        <div class="cart-table-wrap">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Rate</th>
+                <th>Qty</th>
+                <th class="num">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cart-body"></tbody>
+          </table>
+          <div id="cart-empty-msg" class="cart-empty">
+            <img src="{{ brand_logo_url }}" alt="" class="cart-empty-logo">
+            <p class="cart-empty-title">No items added</p>
+            <p>Choose products from the list to start a bill.</p>
           </div>
         </div>
 
-        <div class="field-group">
-          <label>Customer / Shop</label>
-          <input id="customer-search" class="input" type="text" placeholder="Search name or phone">
-          <div id="customer-suggestions" class="suggestions"></div>
-          <div class="inline-group">
-            <input id="customer-name" class="input" type="text" placeholder="Customer name">
-            <input id="customer-phone" class="input" type="text" placeholder="Phone">
-          </div>
-          <textarea id="customer-address" class="input" rows="2" placeholder="Address"></textarea>
-          <input id="customer-gstin" class="input" type="text" placeholder="GSTIN (optional)">
-          <input id="customer-id" type="hidden">
-        </div>
-
-        <div class="field-group">
-          <label>Payment Mode</label>
-          <div class="inline-group payment-modes">
-            <label class="radio-pill"><input type="radio" name="payment-mode" value="cash" checked><span>💵 Cash</span></label>
-            <label class="radio-pill"><input type="radio" name="payment-mode" value="upi"><span>📱 UPI</span></label>
-            <label class="radio-pill"><input type="radio" name="payment-mode" value="card"><span>💳 Card</span></label>
-            <label class="radio-pill"><input type="radio" name="payment-mode" value="credit"><span>📋 Credit</span></label>
+      <div class="cart-panes">
+        <div class="cart-pane" id="pane-customer">
+          <h3 class="pane-title">Customer / Shop</h3>
+          <div class="field-group">
+            <input id="customer-search" class="input" type="text" placeholder="Search existing customer by name or phone" autocomplete="off">
+            <div id="customer-suggestions" class="suggestions"></div>
+            <div class="field-grid-2">
+              <input id="customer-name" class="input" type="text" placeholder="Customer / shop name">
+              <input id="customer-phone" class="input" type="text" placeholder="Phone">
+            </div>
+            <textarea id="customer-address" class="input" rows="2" placeholder="Address"></textarea>
+            <input id="customer-gstin" class="input" type="text" placeholder="GSTIN (optional)">
+            <input id="customer-id" type="hidden">
           </div>
         </div>
 
-        <div class="field-group">
-          <label>GST</label>
-          <label class="gst-toggle-label">
-            <input type="checkbox" id="apply-overall-gst" class="gst-checkbox">
-            <span class="gst-toggle-pill-span">🧾 Apply 5% GST on Total</span>
-          </label>
-          <div id="gst-override-note" class="gst-note" hidden>
-            GST @ 5% will be added on the taxable total
+        <div class="cart-pane" id="pane-payment">
+          <h3 class="pane-title">Payment</h3>
+          <div class="field-group">
+            <label class="field-label">Payment Mode</label>
+            <div class="payment-modes">
+              <label class="radio-pill"><input type="radio" name="payment-mode" value="cash" checked><span>{{ icon('cash', 17) }}Cash</span></label>
+              <label class="radio-pill"><input type="radio" name="payment-mode" value="upi"><span>{{ icon('phone', 17) }}UPI</span></label>
+              <label class="radio-pill"><input type="radio" name="payment-mode" value="card"><span>{{ icon('card', 17) }}Card</span></label>
+              <label class="radio-pill"><input type="radio" name="payment-mode" value="credit"><span>{{ icon('clipboard', 17) }}Credit</span></label>
+            </div>
           </div>
-        </div>
 
-        <div class="field-group" id="cash-fields">
-          <label>Amount Paid</label>
-          <div class="inline-group">
-            <input id="amount-paid" class="input" type="number" min="0" step="0.01">
-            <div class="change-box">
-              Change: <span id="change-returned">0.00</span>
+          <div class="field-grid-2 align-start">
+            <div class="field-group">
+              <label class="field-label">Discount</label>
+              <div class="discount-control">
+                <div class="segmented">
+                  <label class="radio"><input type="radio" name="discount-type" value="flat" checked><span>₹</span></label>
+                  <label class="radio"><input type="radio" name="discount-type" value="percent"><span>%</span></label>
+                </div>
+                <input id="discount-amount" type="number" class="input small" value="0" min="0" step="0.01">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">GST</label>
+              <label class="gst-toggle-label">
+                <input type="checkbox" id="apply-overall-gst" class="gst-checkbox">
+                <span class="gst-switch" aria-hidden="true"></span>
+                <span class="gst-toggle-text">Add 5% GST</span>
+              </label>
+              <div id="gst-override-note" class="gst-note" hidden>GST @ 5% will be added on the taxable total</div>
+            </div>
+          </div>
+
+          <div class="field-group" id="cash-fields">
+            <label class="field-label">Amount Received</label>
+            <div class="cash-row">
+              <div class="input-prefix">
+                <span>₹</span>
+                <input id="amount-paid" class="input" type="number" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="change-box">
+                <small>Change</small>
+                <span id="change-returned">0.00</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="field-group">
-          <label>Notes</label>
-          <textarea id="bill-notes" class="input" rows="2" placeholder="Optional notes"></textarea>
+        <div class="cart-pane" id="pane-extra">
+          <h3 class="pane-title">Officer &amp; Notes</h3>
+          <div class="field-group">
+            <label class="field-label" for="marketing-officer">Marketing Officer</label>
+            <select id="marketing-officer" class="input">
+              <option value="" data-phone="">None</option>
+              {% for officer in officers %}
+                <option value="{{ officer.id }}" data-phone="{{ officer.phone or '' }}">{{ officer.name }}</option>
+              {% endfor %}
+            </select>
+            <div class="officer-phone" id="officer-phone"></div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes</label>
+            <textarea id="bill-notes" class="input" rows="3" placeholder="Optional notes"></textarea>
+          </div>
         </div>
       </div>
 
-      <div class="cart-summary">
-        <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">0.00</span></div>
-        <div class="summary-row"><span>Discount</span><span id="summary-discount">0.00</span></div>
-        <div class="summary-row"><span>Taxable</span><span id="summary-taxable">0.00</span></div>
-        <div class="summary-row"><span>GST</span><span id="summary-gst">0.00</span></div>
-        <div class="summary-row total"><span>Grand Total</span><span id="summary-grand">₹ 0.00</span></div>
-      </div>
-
-      <div class="cart-actions">
-        <button id="save-print" class="btn btn-primary btn-lg">💾 Save & Print (F4)</button>
-        <div class="cart-actions-row">
-          <button id="save-draft" class="btn btn-secondary">Save Draft</button>
-          <button id="clear-cart" class="btn btn-ghost">🗑 Clear Cart</button>
+      <div class="checkout">
+        <div class="cart-summary">
+          <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">0.00</span></div>
+          <div class="summary-row"><span>Discount</span><span id="summary-discount">0.00</span></div>
+          <div class="summary-row"><span>Taxable</span><span id="summary-taxable">0.00</span></div>
+          <div class="summary-row"><span>GST</span><span id="summary-gst">0.00</span></div>
+          <div class="summary-row total"><span>Grand Total</span><span id="summary-grand">₹ 0.00</span></div>
         </div>
+
+        <div class="cart-actions">
+          <button id="save-draft" class="btn btn-secondary btn-lg" type="button">Save Draft</button>
+          <button id="save-print" class="btn btn-primary btn-lg" type="button">Save &amp; Print (F4)</button>
+        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -207,4 +233,18 @@
 
 {% block extra_scripts %}
   <script src="{{ url_for('static', filename='js/billing.js') }}" defer></script>
+  <script>
+    (function () {
+      var select = document.getElementById("marketing-officer");
+      var phone = document.getElementById("officer-phone");
+      if (!select || !phone) return;
+      function show() {
+        var opt = select.options[select.selectedIndex];
+        var p = opt.getAttribute("data-phone");
+        phone.textContent = p ? "Phone: " + p : "";
+      }
+      select.addEventListener("change", show);
+      show();
+    })();
+  </script>
 {% endblock %}

@@ -9,3 +9,8 @@ build/
 electron/node_modules/
 electron-out/
 node_modules/
+
+# local preview
+.venv/
+instance/
+*.db

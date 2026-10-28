@@ -16,6 +16,7 @@ Usage:
 """
 
 from datetime import datetime
+from utils.timeutil import now_ist
 from typing import Optional, Any
 
 
@@ -52,7 +53,7 @@ def log_action(
         old_value=old_val,
         new_value=new_val,
         ip_address=ip_address,
-        created_at=datetime.utcnow(),
+        created_at=now_ist(),
     )
     try:
         db.session.add(entry)

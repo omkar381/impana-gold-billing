@@ -17,6 +17,7 @@ updated_at is maintained via a PostgreSQL trigger (see schema.sql).
 """
 
 from datetime import datetime
+from utils.timeutil import now_ist, today_ist
 from extensions import db
 
 
@@ -41,12 +42,12 @@ class AdminUser(db.Model):
     failed_login_count = db.Column(db.Integer, default=0, nullable=False)
     locked_until = db.Column(db.DateTime(timezone=True))  # brute-force lockout
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
     updated_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_ist,
+        onupdate=now_ist,
         nullable=False,
     )
 
@@ -79,8 +80,8 @@ class BusinessSettings(db.Model):
     updated_by = db.Column(db.Integer, db.ForeignKey("admin_users.id"))
     updated_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_ist,
+        onupdate=now_ist,
         nullable=False,
     )
 
@@ -99,7 +100,7 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     sort_order = db.Column(db.Integer, default=0)
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
 
     products = db.relationship("Product", backref="category", lazy="dynamic")
@@ -130,12 +131,12 @@ class Product(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True))       # soft delete
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
     updated_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_ist,
+        onupdate=now_ist,
         nullable=False,
     )
 
@@ -160,12 +161,12 @@ class Customer(db.Model):
     loyalty_points = db.Column(db.Integer, default=0)
     deleted_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
     updated_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_ist,
+        onupdate=now_ist,
         nullable=False,
     )
 
@@ -191,7 +192,7 @@ class Bill(db.Model):
         db.Integer, db.ForeignKey("admin_users.id"), nullable=False
     )
     bill_date = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False, index=True
+        db.DateTime(timezone=True), default=now_ist, nullable=False, index=True
     )
     subtotal = db.Column(db.Numeric(12, 2), nullable=False)
     discount_amount = db.Column(db.Numeric(12, 2), default=0)
@@ -218,13 +219,17 @@ class Bill(db.Model):
     )
     cancelled_at = db.Column(db.DateTime(timezone=True))
     cancel_reason = db.Column(db.Text)
+    # Marketing officer snapshot — printed on the invoice. Stored as text so an
+    # old bill keeps showing who handled it even if the officer is edited later.
+    marketing_officer_name = db.Column(db.String(120))
+    marketing_officer_phone = db.Column(db.String(30))
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
     updated_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_ist,
+        onupdate=now_ist,
         nullable=False,
     )
 
@@ -283,7 +288,7 @@ class DailySummary(db.Model):
     upi_total = db.Column(db.Numeric(12, 2), default=0)
     card_total = db.Column(db.Numeric(12, 2), default=0)
     computed_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
 
     def __repr__(self):
@@ -306,7 +311,7 @@ class AuditLog(db.Model):
     new_value = db.Column(db.JSON)
     ip_address = db.Column(db.String(45))
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
 
     actor = db.relationship("AdminUser")
@@ -333,7 +338,7 @@ class InventoryTransaction(db.Model):
     reference_id = db.Column(db.Integer)
     note = db.Column(db.Text)
     created_at = db.Column(
-        db.DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        db.DateTime(timezone=True), default=now_ist, nullable=False
     )
 
     product = db.relationship("Product")
@@ -341,3 +346,23 @@ class InventoryTransaction(db.Model):
 
     def __repr__(self):
         return f"<InventoryTransaction {self.product_id} {self.change_qty}>"
+
+
+# ---------------------------------------------------------------------------
+# 11. MarketingOfficer  (selectable on every bill; printed on the invoice)
+# ---------------------------------------------------------------------------
+
+class MarketingOfficer(db.Model):
+    __tablename__ = "marketing_officers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(30))
+    is_default = db.Column(db.Boolean, default=False, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), default=now_ist, nullable=False
+    )
+
+    def __repr__(self):
+        return f"<MarketingOfficer {self.name}>"

@@ -36,7 +36,7 @@
             <th>Date</th>
             <th>Customer</th>
             <th>Items</th>
-            <th>Grand Total</th>
+            <th class="num">Grand Total</th>
             <th>Payment</th>
             <th>Status</th>
             <th>Actions</th>
@@ -45,13 +45,13 @@
         <tbody>
           {% for bill in bills %}
             <tr>
-              <td>{{ bill.bill_number }}</td>
-              <td>{{ bill.bill_date.strftime('%d-%m-%Y %H:%M') }}</td>
+              <td class="strong mono">{{ bill.bill_number }}</td>
+              <td class="mono">{{ bill.bill_date.strftime('%d-%m-%Y %H:%M') }}</td>
               <td>{{ bill.customer.name if bill.customer else 'Walk-in' }}</td>
               <td>{{ bill.items|length }}</td>
-              <td>Rs. {{ '%.2f'|format(bill.grand_total) }}</td>
-              <td>{{ bill.payment_mode }}</td>
-              <td>{{ bill.status }}</td>
+              <td class="num strong">₹ {{ '{:,.2f}'.format(bill.grand_total) }}</td>
+              <td><span class="pill pill-pay pay-{{ bill.payment_mode|lower }}">{{ bill.payment_mode|upper }}</span></td>
+              <td><span class="status status-{{ bill.status }}">{{ bill.status|capitalize }}</span></td>
               <td class="row-actions">
                 <a class="btn btn-link" href="{{ url_for('admin.bill_detail', bill_id=bill.id) }}">View</a>
                 <a class="btn btn-ghost" target="_blank" href="{{ url_for('billing.print_bill', bill_id=bill.id) }}">Print</a>

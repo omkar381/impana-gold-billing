@@ -218,3 +218,10 @@ class StockAdjustForm(FlaskForm):
         "Note",
         validators=[DataRequired(), Length(min=3, max=200)],
     )
+
+
+# ── Marketing officers ─────────────────────────────────────────────────────
+
+class OfficerForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired(), Length(max=120)])
+    phone = StringField("Phone", validators=[Optional(), Length(max=30)])

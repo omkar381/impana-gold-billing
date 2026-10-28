@@ -11,7 +11,7 @@
     </div>
   </div>
 
-  <div class="admin-grid">
+  <div class="admin-grid grid-form-table">
     <div class="card">
       <h2>Edit Customer</h2>
       <form method="post" action="{{ url_for('admin.edit_customer', customer_id=customer.id) }}" class="form-grid">
@@ -60,7 +60,7 @@
                 <td><a href="{{ url_for('admin.bill_detail', bill_id=bill.id) }}">{{ bill.bill_number }}</a></td>
                 <td>{{ bill.bill_date.strftime('%d-%m-%Y') }}</td>
                 <td>Rs. {{ '%.2f'|format(bill.grand_total) }}</td>
-                <td>{{ bill.status }}</td>
+                <td><span class="status status-{{ bill.status }}">{{ bill.status|capitalize }}</span></td>
               </tr>
             {% else %}
               <tr><td colspan="4">No bills yet.</td></tr>

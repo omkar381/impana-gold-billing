@@ -13,7 +13,7 @@
     </form>
   </div>
 
-  <div class="admin-grid">
+  <div class="admin-grid grid-form-table">
     <div class="card">
       <h2>Add Customer</h2>
       <form method="post" action="{{ url_for('admin.add_customer') }}" class="form-grid">
@@ -55,7 +55,7 @@
           <tbody>
             {% for row in customers %}
               <tr>
-                <td>{{ row.customer.name }}</td>
+                <td class="strong">{{ row.customer.name }}</td>
                 <td>{{ row.customer.phone or '-' }}</td>
                 <td>{{ row.bill_count }}</td>
                 <td>Rs. {{ '%.2f'|format(row.total_spent or 0) }}</td>

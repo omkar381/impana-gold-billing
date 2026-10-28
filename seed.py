@@ -173,6 +173,20 @@ def seed_products() -> None:
         )
 
 
+def seed_officer() -> None:
+    from models import MarketingOfficer
+    from utils.schema import DEFAULT_OFFICER_NAME, DEFAULT_OFFICER_PHONE
+
+    if MarketingOfficer.query.count() == 0:
+        db.session.add(
+            MarketingOfficer(
+                name=DEFAULT_OFFICER_NAME,
+                phone=DEFAULT_OFFICER_PHONE,
+                is_default=True,
+            )
+        )
+
+
 def main() -> None:
     app = create_app()
     with app.app_context():
@@ -180,6 +194,7 @@ def main() -> None:
         seed_settings()
         seed_categories()
         seed_products()
+        seed_officer()
         db.session.commit()
         print("Seed completed successfully.")
 

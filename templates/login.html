@@ -1,38 +1,72 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
-{% block title %}Login - Impana Gold{% endblock %}
+{% block title %}Sign in - Impana Gold{% endblock %}
+{% block body_class %}auth-body{% endblock %}
 
 {% block content %}
-<section class="auth-wrapper">
-  <div class="card auth-card">
-    <h1>Admin Login</h1>
-    <p class="muted">Enter your credentials to access the system.</p>
+<section class="auth-split">
+  <aside class="auth-side">
+    <div class="auth-side-inner">
+      <img class="auth-logo" src="{{ brand_logo_url }}" alt="Impana Gold">
+      <h2>Billing &amp; Inventory</h2>
+      <p>Counter billing, stock and GST reports for Impana Gold.</p>
+      <ul class="auth-points">
+        <li>{{ icon('receipt', 18) }}<span>GST tax invoices in A5 print format</span></li>
+        <li>{{ icon('warehouse', 18) }}<span>Live warehouse stock</span></li>
+        <li>{{ icon('chart', 18) }}<span>Daily sales and GST reports</span></li>
+      </ul>
+    </div>
+    <div class="auth-credit">Powered by <strong>Padashetty Softwares</strong></div>
+  </aside>
 
-    <form method="post" class="form-grid">
-      {{ form.hidden_tag() }}
+  <div class="auth-main">
+    <div class="auth-card">
+      <h1>Sign in</h1>
+      <p class="muted">Use your staff account to continue.</p>
 
-      <label>
-        <span>Username</span>
-        {{ form.username(class="input") }}
-        {% if form.username.errors %}
-        <small class="field-error">{{ form.username.errors[0] }}</small>
-        {% endif %}
-      </label>
+      <form method="post" class="form-grid auth-form">
+        {{ form.hidden_tag() }}
 
-      <label>
-        <span>Password</span>
-        {{ form.password(class="input") }}
-        {% if form.password.errors %}
-        <small class="field-error">{{ form.password.errors[0] }}</small>
-        {% endif %}
-      </label>
+        <label class="field">
+          <span class="field-label">Username</span>
+          {{ form.username(class="input", autocomplete="username", autofocus=true) }}
+          {% if form.username.errors %}
+          <small class="field-error">{{ form.username.errors[0] }}</small>
+          {% endif %}
+        </label>
 
-      <button type="submit" class="btn btn-primary">Sign In</button>
-    </form>
+        <label class="field">
+          <span class="field-label">Password</span>
+          <span class="input-wrap">
+            {{ form.password(class="input", autocomplete="current-password", id="login-password") }}
+            <button type="button" class="input-action" data-toggle-password="login-password" aria-label="Show password">
+              <span class="show-ico">{{ icon('eye', 18) }}</span>
+              <span class="hide-ico">{{ icon('eye-off', 18) }}</span>
+            </button>
+          </span>
+          {% if form.password.errors %}
+          <small class="field-error">{{ form.password.errors[0] }}</small>
+          {% endif %}
+        </label>
 
-    <div style="text-align: center; font-size: 0.8rem; color: #777; margin-top: 1.5rem; font-family: sans-serif;">
-      Powered by <strong style="color: var(--primary, #cda250);">Padashetty Softwares</strong>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Sign in</button>
+      </form>
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.querySelectorAll("[data-toggle-password]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var input = document.getElementById(btn.getAttribute("data-toggle-password"));
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.classList.toggle("is-on", show);
+      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    });
+  });
+</script>
 {% endblock %}

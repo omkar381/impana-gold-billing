@@ -212,11 +212,11 @@
   <!-- Header -->
   <div class="gst-header">
     <div>
-      <div class="gst-title">📊 GST Report</div>
-      <div class="gst-subtitle">For CA / Accountant Submission &nbsp;·&nbsp; {{ settings.get('shop_name', 'Impana Gold') }} &nbsp;·&nbsp; GSTIN: {{ settings.get('gstin', '—') }}</div>
+      <div class="gst-title">GST Report</div>
+      <div class="gst-subtitle">For CA / Accountant Submission &nbsp;·&nbsp;{{ settings.get('shop_name', 'Impana Gold') }} &nbsp;·&nbsp;GSTIN: {{ settings.get('gstin', '—') }}</div>
     </div>
     <div class="period-badge">
-      📅 {{ date_from_display }} — {{ date_to_display }}
+      {{ date_from_display }} — {{ date_to_display }}
     </div>
   </div>
 
@@ -230,7 +230,7 @@
       <label>To Date</label>
       <input type="date" name="date_to" value="{{ date_to }}" required>
     </div>
-    <button type="submit" class="btn-filter">🔍 Apply Filter</button>
+    <button type="submit" class="btn-filter">Apply Filter</button>
   </form>
 
   <!-- Summary Cards -->
@@ -281,12 +281,12 @@
   <div class="gst-actions">
     <a href="{{ url_for('admin.gst_report_csv', date_from=date_from, date_to=date_to) }}"
        class="btn-export btn-csv">
-      📥 Export CSV
+      Export CSV
     </a>
     <a href="{{ url_for('admin.gst_report_print', date_from=date_from, date_to=date_to) }}"
        target="_blank"
        class="btn-export btn-print">
-      🖨️ Print / PDF
+      Print / PDF
     </a>
   </div>
 
@@ -354,7 +354,7 @@
     </div>
     {% else %}
     <div class="no-data">
-      <div class="nd-icon">📭</div>
+      <div class="nd-icon"></div>
       No confirmed bills found for the selected period.<br>
       Try adjusting the date range.
     </div>
