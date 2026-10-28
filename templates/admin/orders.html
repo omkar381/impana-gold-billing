@@ -1,0 +1,58 @@
+{% extends "admin/base_admin.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Order Requests - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <div>
+      <h1>Order Requests</h1>
+      <p class="page-sub">Orders taken by marketing officers. Nothing becomes a bill, reduces stock or counts as a sale until you approve it.</p>
+    </div>
+  </div>
+
+  <nav class="tab-links" aria-label="Filter">
+    {% for key, label in [('pending', 'Waiting'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('cancelled', 'Cancelled'), ('all', 'All')] %}
+    <a href="{{ url_for('admin.order_requests', status=key) }}" class="{{ 'is-active' if status == key }}">
+      {{ label }}{% if key != 'all' and counts.get(key) %}<span class="count">{{ counts.get(key) }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Officer</th>
+            <th>Shop</th>
+            <th class="num">Items</th>
+            <th class="num">Estimated</th>
+            <th>Sent</th>
+            <th>Status</th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="strong mono">{{ r.request_number }}</td>
+            <td>{{ r.officer.name }}</td>
+            <td>{{ r.shop_name }}{% if not r.customer_id %} <span class="tag-new">New shop</span>{% endif %}</td>
+            <td class="num">{{ r.items|length }}</td>
+            <td class="num strong">₹ {{ '{:,.2f}'.format(r.estimated_total) }}</td>
+            <td class="mono">{{ r.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+            <td><span class="status status-{{ {'pending': 'draft', 'approved': 'confirmed', 'rejected': 'cancelled', 'cancelled': 'muted'}[r.status] }}">{{ {'pending': 'Waiting', 'approved': 'Approved', 'rejected': 'Rejected', 'cancelled': 'Cancelled'}[r.status] }}</span></td>
+            <td class="row-actions"><a class="btn {{ 'btn-primary' if r.status == 'pending' else 'btn-secondary' }} btn-sm" href="{{ url_for('admin.order_review', order_id=r.id) }}">{{ 'Review' if r.status == 'pending' else 'View' }}</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8">{{ 'No orders are waiting. You are all caught up.' if status == 'pending' else 'No orders here.' }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

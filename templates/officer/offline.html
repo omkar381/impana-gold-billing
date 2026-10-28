@@ -1,0 +1,10 @@
+{% extends "officer/base.html" %}
+{% block title %}Offline - Impana Sales{% endblock %}
+{% block content %}
+<main class="offline-screen">
+  <img src="{{ url_for('static', filename='img/impana-logo.png') }}" alt="Impana Gold">
+  <h1>You are offline</h1>
+  <p>Orders need an internet connection so the admin can see them. Check your signal and try again.</p>
+  <button type="button" class="m-btn m-btn-primary" onclick="location.reload()">Try again</button>
+</main>
+{% endblock %}

@@ -58,16 +58,32 @@ def create_app(config_name: str = None) -> Flask:
         logo = "img/impana-logo.png"
         return {"brand_logo_url": url_for("static", filename=logo)}
 
+    # ── Pending-approval badge for the admin sidebar ───────────────────────
+    @app.context_processor
+    def inject_pending_orders():
+        from flask import request
+        from flask_login import current_user
+        try:
+            if (request.blueprint == "admin" and current_user.is_authenticated
+                    and current_user.role == "superadmin"):
+                from models import OrderRequest
+                return {"pending_orders_count": OrderRequest.query.filter_by(status="pending").count()}
+        except Exception:
+            db.session.rollback()
+        return {"pending_orders_count": 0}
+
     # ── Blueprints ─────────────────────────────────────────────────────────
     from auth import auth_bp
     from billing import billing_bp
     from admin import admin_bp
     from api import api_bp
+    from officer_app import officer_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(officer_bp)
 
     # ── Health-check route ─────────────────────────────────────────────────
     from flask import jsonify

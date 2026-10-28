@@ -17,9 +17,21 @@ log = logging.getLogger(__name__)
 DEFAULT_OFFICER_NAME = "Siddalingayya Hiremath"
 DEFAULT_OFFICER_PHONE = "+91 87470 04801"
 
-_BILL_COLUMNS = {
-    "marketing_officer_name": "VARCHAR(120)",
-    "marketing_officer_phone": "VARCHAR(30)",
+_COLUMNS = {
+    "bills": {
+        "marketing_officer_name": "VARCHAR(120)",
+        "marketing_officer_phone": "VARCHAR(30)",
+        "marketing_officer_id": "INTEGER",
+    },
+    "marketing_officers": {
+        "password_hash": "VARCHAR(255)",
+        "photo_path": "VARCHAR(255)",
+        "photo_data": "BLOB",  # becomes BYTEA on PostgreSQL (see _ddl)
+        "monthly_target": "NUMERIC(12, 2) DEFAULT 0",
+        "failed_login_count": "INTEGER DEFAULT 0 NOT NULL",
+        "locked_until": "TIMESTAMP WITH TIME ZONE",
+        "last_login": "TIMESTAMP WITH TIME ZONE",
+    },
 }
 
 
@@ -34,12 +46,19 @@ def ensure_marketing_officer_schema(db) -> None:
 
         if "marketing_officers" not in tables:
             MarketingOfficer.__table__.create(db.engine, checkfirst=True)
+            inspector = inspect(db.engine)
 
-        existing = {c["name"] for c in inspector.get_columns("bills")}
-        for name, ddl in _BILL_COLUMNS.items():
-            if name not in existing:
-                db.session.execute(text(f"ALTER TABLE bills ADD COLUMN {name} {ddl}"))
+        for table, columns in _COLUMNS.items():
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in existing:
+                    if ddl == "BLOB" and db.engine.dialect.name == "postgresql":
+                        ddl = "BYTEA"
+                    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
         db.session.commit()
+
+        # Officer order requests (new tables only; never touches existing ones)
+        db.create_all()
 
         if MarketingOfficer.query.count() == 0:
             db.session.add(

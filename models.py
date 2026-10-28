@@ -223,6 +223,7 @@ class Bill(db.Model):
     # old bill keeps showing who handled it even if the officer is edited later.
     marketing_officer_name = db.Column(db.String(120))
     marketing_officer_phone = db.Column(db.String(30))
+    marketing_officer_id = db.Column(db.Integer, index=True)  # plain id, no FK: survives officer deletion
     created_at = db.Column(
         db.DateTime(timezone=True), default=now_ist, nullable=False
     )
@@ -360,9 +361,85 @@ class MarketingOfficer(db.Model):
     phone = db.Column(db.String(30))
     is_default = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    # Officer-app login (phone number + password). Set/reset by the superadmin only.
+    password_hash = db.Column(db.String(255))
+    photo_path = db.Column(db.String(255))      # version token for cache-busting (photo itself is in photo_data)
+    photo_data = db.Column(db.LargeBinary)       # stored in the database so it survives redeploys
+    monthly_target = db.Column(db.Numeric(12, 2), default=0)
+    failed_login_count = db.Column(db.Integer, default=0, nullable=False)
+    locked_until = db.Column(db.DateTime(timezone=True))
+    last_login = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(
         db.DateTime(timezone=True), default=now_ist, nullable=False
     )
 
+    @property
+    def login_phone(self) -> str:
+        """Digits-only, last 10 — what the officer types to sign in."""
+        digits = "".join(ch for ch in (self.phone or "") if ch.isdigit())
+        return digits[-10:]
+
+    @property
+    def can_login(self) -> bool:
+        return bool(self.is_active and self.password_hash and self.login_phone)
+
     def __repr__(self):
         return f"<MarketingOfficer {self.name}>"
+
+
+# ---------------------------------------------------------------------------
+# 12. OrderRequest  (raised by an officer; becomes a real Bill only when the
+#     superadmin approves it — no bill number and no stock effect until then)
+# ---------------------------------------------------------------------------
+
+class OrderRequest(db.Model):
+    __tablename__ = "order_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_number = db.Column(db.String(30), unique=True, nullable=False, index=True)
+    officer_id = db.Column(db.Integer, db.ForeignKey("marketing_officers.id"), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    # Proposed new shop (used when customer_id is empty)
+    new_customer_name = db.Column(db.String(200))
+    new_customer_phone = db.Column(db.String(20))
+    new_customer_address = db.Column(db.Text)
+    new_customer_gstin = db.Column(db.String(20))
+    payment_mode = db.Column(db.String(10), default="cash", nullable=False)  # a hint; admin decides
+    notes = db.Column(db.Text)
+    estimated_total = db.Column(db.Numeric(12, 2), default=0)
+    status = db.Column(db.String(12), default="pending", nullable=False, index=True)  # pending/approved/rejected/cancelled
+    decision_reason = db.Column(db.Text)
+    decided_by = db.Column(db.Integer, db.ForeignKey("admin_users.id"))
+    decided_at = db.Column(db.DateTime(timezone=True))
+    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"))
+    seen_by_officer = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=now_ist, nullable=False, index=True)
+
+    officer = db.relationship("MarketingOfficer", foreign_keys=[officer_id])
+    customer = db.relationship("Customer", foreign_keys=[customer_id])
+    bill = db.relationship("Bill", foreign_keys=[bill_id])
+    items = db.relationship(
+        "OrderRequestItem", backref="order", lazy="joined", cascade="all, delete-orphan"
+    )
+
+    @property
+    def shop_name(self) -> str:
+        return self.customer.name if self.customer else (self.new_customer_name or "—")
+
+    def __repr__(self):
+        return f"<OrderRequest {self.request_number} {self.status}>"
+
+
+class OrderRequestItem(db.Model):
+    __tablename__ = "order_request_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order_requests.id"), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    product_name = db.Column(db.String(200), nullable=False)   # snapshot
+    unit = db.Column(db.String(10), nullable=False)             # snapshot
+    qty = db.Column(db.Numeric(12, 3), nullable=False)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)   # server price at request time
+    line_total = db.Column(db.Numeric(12, 2), nullable=False)
+
+    product = db.relationship("Product")

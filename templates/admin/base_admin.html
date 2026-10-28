@@ -11,9 +11,9 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="admin-body">
-  {% macro nav_link(endpoint, label, ico, also=()) -%}
+  {% macro nav_link(endpoint, label, ico, also=(), badge=0) -%}
     {%- set ep = request.endpoint or '' -%}
-    <a href="{{ url_for(endpoint) }}" class="{{ 'is-active' if ep == endpoint or ep in also }}">{{ icon(ico, 18) }}<span>{{ label }}</span></a>
+    <a href="{{ url_for(endpoint) }}" class="{{ 'is-active' if ep == endpoint or ep in also }}">{{ icon(ico, 18) }}<span>{{ label }}</span>{% if badge %}<em class="nav-badge">{{ badge }}</em>{% endif %}</a>
   {%- endmacro %}
 
   <div class="admin-layout">
@@ -36,7 +36,11 @@
         <p class="nav-label">Sales</p>
         {{ nav_link('admin.bills', 'Bills', 'receipt', ('admin.bill_detail',)) }}
         {{ nav_link('admin.customers', 'Customers', 'users', ('admin.customer_detail',)) }}
-        {{ nav_link('admin.officers', 'Marketing Officers', 'briefcase') }}
+        {% if current_user.is_authenticated and current_user.role == 'superadmin' %}
+          {{ nav_link('admin.order_requests', 'Order Requests', 'inbox', ('admin.order_review',), pending_orders_count) }}
+          {{ nav_link('admin.officers', 'Marketing Officers', 'briefcase', ('admin.officer_new', 'admin.officer_edit')) }}
+          {{ nav_link('admin.officer_report', 'Officer Sales', 'trend') }}
+        {% endif %}
 
         <p class="nav-label">Inventory</p>
         {{ nav_link('admin.products', 'Products', 'package', ('admin.edit_product',)) }}

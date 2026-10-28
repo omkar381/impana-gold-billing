@@ -1,0 +1,13 @@
+{# Shared bits for the officer app #}
+
+{% macro avatar(o, size='md') -%}
+  {%- set src = officer_photo(o) -%}
+  <span class="avatar avatar-{{ size }}">
+    {%- if src %}<img src="{{ src }}" alt="{{ o.name }}">{% else %}<span class="avatar-initials">{{ (o.name or '?')[:1]|upper }}</span>{% endif -%}
+  </span>
+{%- endmacro %}
+
+{% macro status_pill(status) -%}
+  {%- set label = {'pending': 'Waiting for approval', 'approved': 'Approved', 'rejected': 'Not approved', 'cancelled': 'Cancelled'}[status] -%}
+  <span class="pill pill-{{ status }}">{{ label }}</span>
+{%- endmacro %}

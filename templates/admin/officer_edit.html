@@ -1,0 +1,71 @@
+{% extends "admin/base_admin.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}{{ 'Edit officer' if officer else 'Add officer' }} - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <div>
+      <h1>{{ 'Edit ' ~ officer.name if officer else 'Add officer' }}</h1>
+      <p class="page-sub">The phone number and password are what the officer uses to sign in to the sales app.</p>
+    </div>
+    <div class="header-actions">
+      <a class="btn btn-secondary" href="{{ url_for('admin.officers') }}">Back to officers</a>
+    </div>
+  </div>
+
+  <div class="card form-card">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+      {{ form.hidden_tag() }}
+
+      <div class="photo-row">
+        {% if officer and officer.photo_path %}<img class="photo-preview" src="{{ officer_photo(officer) }}" alt="">
+        {% else %}<span class="photo-preview photo-empty">{{ icon('camera', 28) }}</span>{% endif %}
+        <label class="field">
+          <span class="field-label">Photo</span>
+          {{ form.photo(class="input", accept="image/*") }}
+          <small class="muted">A clear face photo. It shows in the officer's app and on the leaderboard.</small>
+          {% if form.photo.errors %}<small class="field-error">{{ form.photo.errors[0] }}</small>{% endif %}
+        </label>
+      </div>
+
+      <div class="form-grid-2">
+        <label class="field">
+          <span class="field-label">Full name</span>
+          {{ form.name(class="input", required=true) }}
+          {% if form.name.errors %}<small class="field-error">{{ form.name.errors[0] }}</small>{% endif %}
+        </label>
+        <label class="field">
+          <span class="field-label">Phone number (sign-in ID)</span>
+          {{ form.phone(class="input", placeholder="+91 98765 43210", required=true) }}
+          {% if form.phone.errors %}<small class="field-error">{{ form.phone.errors[0] }}</small>{% endif %}
+        </label>
+      </div>
+
+      <div class="form-grid-2">
+        <label class="field">
+          <span class="field-label">Password {% if officer %}<em class="muted">(leave empty to keep the current one)</em>{% endif %}</span>
+          {{ form.password(class="input", autocomplete="new-password", placeholder="At least 6 characters") }}
+          {% if form.password.errors %}<small class="field-error">{{ form.password.errors[0] }}</small>{% endif %}
+          {% if officer %}<small class="muted">Setting a new password signs the officer out of every phone.</small>{% endif %}
+        </label>
+        <label class="field">
+          <span class="field-label">Monthly sales target (₹)</span>
+          {{ form.monthly_target(class="input", placeholder="e.g. 100000", step="1000") }}
+          {% if form.monthly_target.errors %}<small class="field-error">{{ form.monthly_target.errors[0] }}</small>{% endif %}
+        </label>
+      </div>
+
+      {% if officer %}
+      <label class="checkbox">{{ form.is_active() }}<span>Active (can sign in and appear on bills)</span></label>
+      {% endif %}
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ 'Save changes' if officer else 'Add officer' }}</button>
+        <a class="btn btn-secondary" href="{{ url_for('admin.officers') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

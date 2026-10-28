@@ -1,0 +1,160 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% from "officer/_macros.html" import avatar, status_pill %}
+{% block title %}Home - Impana Sales{% endblock %}
+
+{% block content %}
+{% set circ = 339.29 %}
+<header class="hero">
+  <div class="hero-row">
+    {{ avatar(o, 'lg') }}
+    <div class="hero-text">
+      <p class="hero-greet">{{ ov.greeting }}</p>
+      <h1>{{ o.name.split(' ')[0] }}</h1>
+      <span class="level-pill">{{ icon('star', 13) }} {{ ov.level }}</span>
+    </div>
+    <div class="streak-chip {{ 'is-hot' if ov.streak >= 1 }}" title="Days in a row with a sale">
+      {{ icon('flame', 20) }}<strong>{{ ov.streak }}</strong><span>day streak</span>
+    </div>
+  </div>
+</header>
+
+<main class="m-page m-page-overlap">
+
+  {# ── Monthly target ─────────────────────────────────────────────── #}
+  <section class="m-card target-card">
+    {% if ov.target > 0 %}
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 132 132" aria-hidden="true">
+        <circle class="ring-track" cx="66" cy="66" r="54"/>
+        <circle class="ring-bar {{ 'is-done' if ov.pct >= 100 }}" cx="66" cy="66" r="54"
+                stroke-dasharray="{{ circ }}" stroke-dashoffset="{{ circ }}"
+                data-offset="{{ '%.2f'|format(circ * (1 - ov.ring_pct / 100)) }}"/>
+      </svg>
+      <div class="ring-center"><strong data-count="{{ ov.pct }}">{{ ov.pct }}</strong><span>%</span></div>
+    </div>
+    <div class="target-info">
+      <p class="m-label">This month</p>
+      <p class="target-amount">₹<span data-count="{{ ov.month_total|int }}" data-inr>{{ ov.month_total|inr }}</span></p>
+      <p class="target-of">of ₹{{ ov.target|inr }} target</p>
+      {% if ov.pct >= 100 %}
+        <p class="target-note is-won">Target reached. Outstanding work.</p>
+      {% else %}
+        <p class="target-note">₹{{ ov.remaining|inr }} to go &middot; {{ ov.days_left }} day{{ '' if ov.days_left == 1 else 's' }} left</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="target-info target-info-wide">
+      <p class="m-label">This month</p>
+      <p class="target-amount">₹<span data-count="{{ ov.month_total|int }}" data-inr>{{ ov.month_total|inr }}</span></p>
+      <p class="target-of">{{ ov.month_orders }} approved order{{ '' if ov.month_orders == 1 else 's' }}</p>
+      <p class="target-note">Your admin has not set a monthly target yet.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Today ──────────────────────────────────────────────────────── #}
+  <section class="stat-row">
+    <div class="stat"><span class="m-label">Today's orders</span><strong>{{ ov.today_orders }}</strong></div>
+    <div class="stat"><span class="m-label">Today's sales</span><strong>₹{{ ov.today_total|inr }}</strong></div>
+    <div class="stat"><span class="m-label">Points</span><strong>{{ ov.my_points|inr }}</strong></div>
+  </section>
+
+  {% if pending %}
+  <a class="strip strip-wait" href="{{ url_for('officer.orders', status='pending') }}">
+    {{ icon('clock', 20) }}
+    <span><strong>{{ pending }}</strong> order{{ '' if pending == 1 else 's' }} waiting for admin approval</span>
+    {{ icon('chevron', 18) }}
+  </a>
+  {% endif %}
+
+  <a class="m-btn m-btn-primary m-btn-block cta-new" href="{{ url_for('officer.order_new') }}">{{ icon('plus', 20) }} Take a new order</a>
+
+  <section class="quote-card">
+    <p>“{{ ov.quote }}”</p>
+  </section>
+
+  {# ── Badges ─────────────────────────────────────────────────────── #}
+  <section class="m-section">
+    <div class="m-section-head"><h2>Achievements</h2><span class="muted">{{ ov.earned_count }} of {{ ov.badges|length }}</span></div>
+    <div class="badge-grid">
+      {% for b in ov.badges %}
+      <div class="badge-tile {{ 'is-earned' if b.earned else 'is-locked' }}">
+        <span class="badge-ico">{{ icon('award' if b.earned else 'lock', 24) }}</span>
+        <strong>{{ b.title }}</strong>
+        <small>{{ 'Earned' if b.earned else b.hint }}</small>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Leaderboard ────────────────────────────────────────────────── #}
+  {% if ov.leaderboard|length > 1 %}
+  <section class="m-section">
+    <div class="m-section-head"><h2>Team leaderboard</h2><span class="muted">This month</span></div>
+    <ol class="board">
+      {% for r in ov.leaderboard %}
+      <li class="{{ 'is-me' if r.id == o.id }}">
+        <span class="board-rank rank-{{ r.rank }}">{% if r.rank == 1 %}{{ icon('trophy', 16) }}{% else %}{{ r.rank }}{% endif %}</span>
+        <span class="avatar avatar-sm">{% if r.photo %}<img src="{{ url_for('officer.photo', officer_id=r.id, v=r.photo) }}" alt="">{% else %}<span class="avatar-initials">{{ r.name[:1]|upper }}</span>{% endif %}</span>
+        <span class="board-name">{{ r.name }}{% if r.id == o.id %} <em>(you)</em>{% endif %}</span>
+        <span class="board-pts">{{ r.points|inr }} pts</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% if ov.my_rank and ov.my_rank > 5 %}
+      <p class="board-foot">You are #{{ ov.my_rank }} of {{ ov.officers_count }}. Every order moves you up.</p>
+    {% endif %}
+    <p class="board-foot muted">1 point for every ₹100 of approved sales.</p>
+  </section>
+  {% endif %}
+
+  {# ── Recent ─────────────────────────────────────────────────────── #}
+  <section class="m-section">
+    <div class="m-section-head"><h2>Recent orders</h2><a href="{{ url_for('officer.orders') }}">See all</a></div>
+    {% if recent %}
+    <ul class="order-list">
+      {% for r in recent %}
+      <li>
+        <a href="{{ url_for('officer.order_detail', order_id=r.id) }}">
+          <span class="order-main"><strong>{{ r.shop_name }}</strong><small>{{ r.request_number }} &middot; {{ r.created_at.strftime('%d %b, %I:%M %p') }}</small></span>
+          <span class="order-side"><strong>₹{{ r.estimated_total|inr }}</strong>{{ status_pill(r.status) }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">
+      <p><strong>No orders yet</strong></p>
+      <p>Tap “Take a new order” after your next shop visit.</p>
+    </div>
+    {% endif %}
+  </section>
+</main>
+
+{% if updates %}
+<script type="application/json" id="m-updates">{{ updates|map(attribute='id')|list|tojson }}</script>
+<div class="celebrate" id="celebrate" hidden>
+  <div class="celebrate-card" role="dialog" aria-modal="true">
+    {% set approved = updates|selectattr('status', 'equalto', 'approved')|list %}
+    {% set rejected = updates|selectattr('status', 'equalto', 'rejected')|list %}
+    {% if approved %}
+      <div class="celebrate-ico">{{ icon('trophy', 34) }}</div>
+      <h2>{{ 'Order approved!' if approved|length == 1 else approved|length ~ ' orders approved!' }}</h2>
+      {% for u in approved %}
+        <p class="celebrate-line"><strong>{{ u.shop_name }}</strong><br>Bill {{ u.bill.bill_number if u.bill }} &middot; ₹{{ (u.bill.grand_total if u.bill else u.estimated_total)|inr }}</p>
+      {% endfor %}
+      <p class="celebrate-sub">Great work. That is counted in your target.</p>
+    {% endif %}
+    {% if rejected %}
+      <h2 class="{{ 'celebrate-second' if approved }}">{{ 'Order not approved' if rejected|length == 1 else rejected|length ~ ' orders not approved' }}</h2>
+      {% for u in rejected %}
+        <p class="celebrate-line"><strong>{{ u.shop_name }}</strong><br>{{ u.decision_reason or 'No reason given' }}</p>
+      {% endfor %}
+    {% endif %}
+    <button type="button" class="m-btn m-btn-primary m-btn-block" id="celebrate-ok">Continue</button>
+  </div>
+  {% if approved %}<div class="confetti" id="confetti" aria-hidden="true"></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

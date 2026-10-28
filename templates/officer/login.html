@@ -1,0 +1,40 @@
+{% extends "officer/base.html" %}
+{% block title %}Sign in - Impana Sales{% endblock %}
+{% block body_class %}m-auth{% endblock %}
+
+{% block content %}
+<main class="auth-screen">
+  <section class="auth-hero">
+    <div class="auth-logo-badge"><img src="{{ url_for('static', filename='img/impana-logo.png') }}" alt="Impana Gold"></div>
+    <h1>Sales Team</h1>
+    <p>Sign in to see your targets, send orders and track your progress.</p>
+  </section>
+
+  <section class="auth-sheet">
+    <form method="post" class="m-form" autocomplete="on">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label class="m-field">
+        <span>Phone number</span>
+        <span class="phone-input">
+          <span class="phone-prefix">+91</span>
+          <input type="tel" name="phone" inputmode="numeric" autocomplete="username" maxlength="14"
+                 placeholder="98765 43210" value="{{ phone }}" required autofocus>
+        </span>
+      </label>
+
+      <label class="m-field">
+        <span>Password</span>
+        <span class="pw-input">
+          <input type="password" name="password" id="m-password" autocomplete="current-password" placeholder="Your password" required>
+          <button type="button" class="pw-toggle" data-toggle-password="m-password" aria-label="Show password">{{ icon('eye', 20) }}</button>
+        </span>
+      </label>
+
+      <button type="submit" class="m-btn m-btn-primary m-btn-block">Sign in</button>
+      <p class="auth-help">Forgot your password? Ask the admin to reset it.</p>
+    </form>
+    <p class="auth-credit">Powered by <strong>Padashetty Softwares</strong></p>
+  </section>
+</main>
+{% endblock %}

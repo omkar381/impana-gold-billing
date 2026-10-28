@@ -1,0 +1,48 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% from "officer/_macros.html" import avatar %}
+{% block title %}Me - Impana Sales{% endblock %}
+
+{% block content %}
+<header class="hero hero-profile">
+  <div class="profile-id">
+    {{ avatar(o, 'xl') }}
+    <h1>{{ o.name }}</h1>
+    <p>{{ o.phone or '' }}</p>
+    <span class="level-pill">{{ icon('star', 13) }} {{ ov.level }}</span>
+  </div>
+</header>
+
+<main class="m-page m-page-overlap">
+  <section class="stat-row">
+    <div class="stat"><span class="m-label">This month</span><strong>₹{{ ov.month_total|inr }}</strong></div>
+    <div class="stat"><span class="m-label">Team rank</span><strong>{{ '#' ~ ov.my_rank if ov.my_rank else '-' }}</strong></div>
+    <div class="stat"><span class="m-label">Badges</span><strong>{{ ov.earned_count }}/{{ ov.badges|length }}</strong></div>
+  </section>
+
+  <section class="m-card" id="install-card" hidden>
+    <div class="install-row">
+      <span class="shop-ico">{{ icon('download', 22) }}</span>
+      <div><strong>Install the app</strong><p class="muted" id="install-text">Add it to your home screen for one-tap access.</p></div>
+    </div>
+    <button type="button" class="m-btn m-btn-primary m-btn-block" id="install-btn" hidden>Install</button>
+  </section>
+
+  <section class="m-card">
+    <h2 class="card-title">Change password</h2>
+    <form method="post" class="m-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="m-field"><span>Current password</span><input type="password" name="current" autocomplete="current-password" required></label>
+      <label class="m-field"><span>New password</span><input type="password" name="new" autocomplete="new-password" minlength="6" required></label>
+      <label class="m-field"><span>Confirm new password</span><input type="password" name="confirm" autocomplete="new-password" minlength="6" required></label>
+      <button type="submit" class="m-btn m-btn-ghost m-btn-block">Update password</button>
+    </form>
+  </section>
+
+  <form method="post" action="{{ url_for('officer.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="m-btn m-btn-danger m-btn-block">{{ icon('logout', 18) }} Sign out</button>
+  </form>
+  <p class="auth-credit">Powered by <strong>Padashetty Softwares</strong></p>
+</main>
+{% endblock %}

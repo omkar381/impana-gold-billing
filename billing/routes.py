@@ -349,6 +349,7 @@ def create_bill():
         status=status,
         marketing_officer_name=officer.name if officer else None,
         marketing_officer_phone=(officer.phone or None) if officer else None,
+        marketing_officer_id=officer.id if officer else None,
     )
 
     try:

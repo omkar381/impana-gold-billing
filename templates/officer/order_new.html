@@ -1,0 +1,81 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}New order - Impana Sales{% endblock %}
+{% block body_class %}m-has-bar{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <h1>New order</h1>
+  <p>Pick the shop, add products and send it for approval.</p>
+</header>
+
+<script type="application/json" id="order-data">{{ {'products': products, 'shops': shops, 'selected': selected, 'static': '/static/', 'logo': url_for('static', filename='img/impana-logo.png'), 'post': url_for('officer.order_create')}|tojson }}</script>
+
+<main class="m-page" id="order-app">
+
+  <section class="m-card">
+    <div class="step-head"><span class="step-no">1</span><h2>Shop</h2></div>
+    <div class="segmented" role="tablist">
+      <button type="button" class="seg is-active" data-shop-mode="mine">My shops</button>
+      <button type="button" class="seg" data-shop-mode="new">New shop</button>
+    </div>
+
+    <div id="shop-mine">
+      {% if shops %}
+      <div class="search-field">{{ icon('search', 18) }}<input type="search" id="shop-search" placeholder="Search your shops" autocomplete="off"></div>
+      <ul class="shop-pick" id="shop-list"></ul>
+      {% else %}
+      <p class="muted pad-note">You have no shops yet. Add your first one with “New shop”.</p>
+      {% endif %}
+    </div>
+
+    <div id="shop-new" class="m-form" hidden>
+      <label class="m-field"><span>Shop name</span><input type="text" id="ns-name" maxlength="200" placeholder="e.g. Sri Lakshmi Stores"></label>
+      <label class="m-field"><span>Phone number</span><input type="tel" id="ns-phone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile"></label>
+      <label class="m-field"><span>Address <em>(optional)</em></span><textarea id="ns-address" rows="2" maxlength="500"></textarea></label>
+      <label class="m-field"><span>GSTIN <em>(optional)</em></span><input type="text" id="ns-gstin" maxlength="20" autocapitalize="characters"></label>
+      <p class="muted">The admin adds this shop to the customer list when the order is approved.</p>
+    </div>
+  </section>
+
+  <section class="m-card">
+    <div class="step-head"><span class="step-no">2</span><h2>Products</h2></div>
+    <ul class="product-list" id="product-list"></ul>
+  </section>
+
+  <section class="m-card">
+    <div class="step-head"><span class="step-no">3</span><h2>Payment &amp; note</h2></div>
+    <p class="muted">How does the shop plan to pay? The admin confirms the final payment.</p>
+    <div class="pay-chips" id="pay-chips">
+      <button type="button" class="is-active" data-pay="cash">Cash</button>
+      <button type="button" data-pay="upi">UPI</button>
+      <button type="button" data-pay="card">Card</button>
+      <button type="button" data-pay="credit">Credit</button>
+    </div>
+    <label class="m-field"><span>Note <em>(optional)</em></span><textarea id="order-notes" rows="2" maxlength="500" placeholder="Delivery day, special request…"></textarea></label>
+  </section>
+
+  <p class="rule-note">{{ icon('shield', 16) }} Prices are fixed by the company. Your order becomes a bill only after the admin approves it.</p>
+</main>
+
+<div class="order-bar" id="order-bar">
+  <div class="order-bar-sum"><small id="bar-items">No items</small><strong id="bar-total">₹0</strong><small>before GST</small></div>
+  <button type="button" class="m-btn m-btn-primary" id="review-btn" disabled>Review &amp; send</button>
+</div>
+
+<div class="sheet" id="confirm-sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <h2 id="sheet-title">Send for approval?</h2>
+    <div class="sheet-body" id="sheet-body"></div>
+    <p class="m-error" id="sheet-error" hidden></p>
+    <div class="sheet-actions">
+      <button type="button" class="m-btn m-btn-ghost" id="sheet-back">Go back</button>
+      <button type="button" class="m-btn m-btn-primary" id="sheet-send">Send order</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/officer_order.js') }}" defer></script>
+{% endblock %}

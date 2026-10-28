@@ -1,0 +1,87 @@
+{% extends "admin/base_admin.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Officer Sales - Impana Gold{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+  <div class="section-header">
+    <div>
+      <h1>Officer Sales</h1>
+      <p class="page-sub">Sales credited to each marketing officer from confirmed bills. Approved app orders and bills made at the counter with an officer selected both count.</p>
+    </div>
+    <form method="get" class="filter-bar">
+      <input class="input" type="date" name="start_date" value="{{ start.strftime('%Y-%m-%d') }}">
+      <input class="input" type="date" name="end_date" value="{{ end.strftime('%Y-%m-%d') }}">
+      <button class="btn btn-primary" type="submit">Apply</button>
+      <a class="btn btn-secondary" href="{{ url_for('admin.officer_report_export', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d')) }}">Export CSV</a>
+    </form>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card"><span class="metric-label">Total sales</span><strong>₹ {{ '{:,.2f}'.format(total) }}</strong></div>
+    <div class="metric-card"><span class="metric-label">Bills</span><strong>{{ order_count }}</strong></div>
+    <div class="metric-card"><span class="metric-label">Average bill</span><strong>₹ {{ '{:,.2f}'.format(total / order_count if order_count else 0) }}</strong></div>
+    <div class="metric-card"><span class="metric-label">Top officer</span><strong class="metric-text">{{ rows[0].name if rows and rows[0].sales > 0 else '-' }}</strong></div>
+  </div>
+
+  <div class="card">
+    <h2>By officer</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Officer</th><th class="num">Bills</th><th class="num">Sales</th><th class="num">Average bill</th><th>Share of sales</th><th class="actions-col"></th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="{{ 'row-selected' if selected == r.key }}">
+            <td>
+              <div class="person">
+                {% if r.officer and r.officer.photo_path %}<img class="person-photo" src="{{ officer_photo(r.officer) }}" alt="">
+                {% else %}<span class="person-photo person-initial">{{ r.name[:1]|upper }}</span>{% endif %}
+                <strong>{{ r.name }}</strong>
+                {% if r.officer and not r.officer.is_active %}<span class="status status-muted">Deactivated</span>{% endif %}
+              </div>
+            </td>
+            <td class="num">{{ r.orders }}</td>
+            <td class="num strong">₹ {{ '{:,.2f}'.format(r.sales) }}</td>
+            <td class="num">₹ {{ '{:,.2f}'.format(r.avg) }}</td>
+            <td class="share-cell"><div class="meter"><span style="width: {{ '%.1f'|format(r.share) }}%"></span></div><span class="muted">{{ '%.1f'|format(r.share) }}%</span></td>
+            <td class="row-actions">{% if r.orders %}<a class="btn btn-secondary btn-sm" href="{{ url_for('admin.officer_report', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), officer=r.key) }}#bills">Bills</a>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">No sales in this period.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if selected %}
+  <div class="card" id="bills">
+    <div class="card-head">
+      <h2>Bills: {{ selected_row.name if selected_row else 'Officer' }}</h2>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.officer_report', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d')) }}">Close</a>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Bill</th><th>Date</th><th>Customer</th><th>Payment</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          {% for b in bills %}
+          <tr>
+            <td class="strong mono"><a href="{{ url_for('admin.bill_detail', bill_id=b.id) }}">{{ b.bill_number }}</a></td>
+            <td class="mono">{{ b.bill_date.strftime('%d-%m-%Y %H:%M') }}</td>
+            <td>{{ b.customer.name if b.customer else 'Walk-in' }}</td>
+            <td><span class="pill pill-pay pay-{{ b.payment_mode|lower }}">{{ b.payment_mode|upper }}</span></td>
+            <td class="num strong">₹ {{ '{:,.2f}'.format(b.grand_total) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No bills.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

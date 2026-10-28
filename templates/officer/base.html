@@ -1,0 +1,45 @@
+<!doctype html>
+{% from "_icons.html" import icon %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#145a31">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Impana Sales">
+  <title>{% block title %}Impana Sales{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('officer.manifest') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/officer.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="m-body {% block body_class %}{% endblock %}">
+  {% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+  <div class="m-flash-stack" data-flash>
+    {% for category, message in messages %}<div class="m-flash m-flash-{{ category }}">{{ message }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  {% if o is defined and o %}
+  {% set ep = request.endpoint %}
+  <nav class="tabbar" aria-label="Main">
+    <a href="{{ url_for('officer.home') }}" class="{{ 'is-active' if ep == 'officer.home' }}">{{ icon('home', 22) }}<span>Home</span></a>
+    <a href="{{ url_for('officer.orders') }}" class="{{ 'is-active' if ep in ('officer.orders', 'officer.order_detail') }}">{{ icon('list', 22) }}<span>Orders</span></a>
+    <a href="{{ url_for('officer.order_new') }}" class="tab-fab {{ 'is-active' if ep == 'officer.order_new' }}" aria-label="New order">{{ icon('plus', 26) }}</a>
+    <a href="{{ url_for('officer.shops') }}" class="{{ 'is-active' if ep == 'officer.shops' }}">{{ icon('store', 22) }}<span>Shops</span></a>
+    <a href="{{ url_for('officer.profile') }}" class="{{ 'is-active' if ep == 'officer.profile' }}">{{ icon('user', 22) }}<span>Me</span></a>
+  </nav>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/officer.js') }}" defer></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

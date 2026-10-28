@@ -1,0 +1,70 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% from "officer/_macros.html" import status_pill %}
+{% block title %}{{ order.request_number }} - Impana Sales{% endblock %}
+
+{% block content %}
+<header class="page-head page-head-back">
+  <a href="{{ url_for('officer.orders') }}" class="back" aria-label="Back">{{ icon('chevron', 22) }}</a>
+  <div><h1>{{ order.request_number }}</h1><p>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</p></div>
+</header>
+
+<main class="m-page">
+  <section class="status-banner status-{{ order.status }}">
+    <span class="status-ico">{{ icon({'pending': 'clock', 'approved': 'check', 'rejected': 'close', 'cancelled': 'close'}[order.status], 24) }}</span>
+    <div>
+      {% if order.status == 'pending' %}
+        <strong>Waiting for admin approval</strong>
+        <p>You will see the result here and on your home screen.</p>
+      {% elif order.status == 'approved' %}
+        <strong>Approved</strong>
+        <p>Bill {{ order.bill.bill_number if order.bill }} was created{% if order.decided_at %} on {{ order.decided_at.strftime('%d %b, %I:%M %p') }}{% endif %}.</p>
+      {% elif order.status == 'rejected' %}
+        <strong>Not approved</strong>
+        <p>{{ order.decision_reason or 'No reason given.' }}</p>
+      {% else %}
+        <strong>Cancelled</strong>
+        <p>You cancelled this order.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="m-card">
+    <p class="m-label">Shop</p>
+    <p class="detail-shop">{{ order.shop_name }}</p>
+    {% if order.customer and order.customer.phone %}<p class="muted">{{ order.customer.phone }}</p>
+    {% elif order.new_customer_phone %}<p class="muted">{{ order.new_customer_phone }} <span class="tag-new">New shop</span></p>{% endif %}
+    {% if order.new_customer_address %}<p class="muted">{{ order.new_customer_address }}</p>{% endif %}
+  </section>
+
+  <section class="m-card">
+    <p class="m-label">Items</p>
+    <ul class="line-list">
+      {% for i in order.items %}
+      <li>
+        <span><strong>{{ i.product_name }}</strong>
+          <small>
+            {% if i.unit == 'kg' and i.qty|float >= 30 and i.qty|float % 30 == 0 %}{{ '%g'|format(i.qty|float / 30) }} bag{{ '' if i.qty|float / 30 == 1 else 's' }} ({{ '%g'|format(i.qty|float) }} kg)
+            {% else %}{{ '%g'|format(i.qty|float) }} {{ i.unit }}{% endif %}
+            &times; ₹{{ i.unit_price|inr(2) }}
+          </small>
+        </span>
+        <strong>₹{{ i.line_total|inr }}</strong>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="total-row">
+      <span>{{ 'Bill total' if order.status == 'approved' and order.bill else 'Estimated total (before GST)' }}</span>
+      <strong>₹{{ (order.bill.grand_total if order.status == 'approved' and order.bill else order.estimated_total)|inr }}</strong>
+    </div>
+    {% if order.notes %}<p class="muted note-line">Note: {{ order.notes }}</p>{% endif %}
+  </section>
+
+  {% if order.status == 'pending' %}
+  <form method="post" action="{{ url_for('officer.order_cancel', order_id=order.id) }}" data-confirm="Cancel this order?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="m-btn m-btn-danger m-btn-block">Cancel this order</button>
+  </form>
+  {% endif %}
+</main>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}My shops - Impana Sales{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <h1>My shops</h1>
+  <p>Shops you have sold to. Tap one to take a repeat order.</p>
+</header>
+
+<main class="m-page">
+  {% if shops %}
+  <ul class="shop-cards">
+    {% for s in shops %}
+    <li>
+      <div class="shop-top">
+        <span class="shop-ico">{{ icon('store', 22) }}</span>
+        <div class="shop-name"><strong>{{ s.name }}</strong><small>{{ s.phone or 'No phone saved' }}</small></div>
+      </div>
+      <div class="shop-stats">
+        <div><small>Orders</small><strong>{{ s.orders }}</strong></div>
+        <div><small>Total bought</small><strong>₹{{ s.total|inr }}</strong></div>
+        <div><small>Last order</small><strong>{{ s.last.strftime('%d %b') if s.last else '-' }}</strong></div>
+      </div>
+      <div class="shop-actions">
+        {% if s.phone %}<a class="m-btn m-btn-ghost" href="tel:{{ s.phone }}">{{ icon('phone', 18) }} Call</a>{% endif %}
+        <a class="m-btn m-btn-primary" href="{{ url_for('officer.order_new', shop=s.id) }}">{{ icon('plus', 18) }} New order</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    {{ icon('store', 34) }}
+    <p><strong>No shops yet</strong></p>
+    <p>Shops appear here once an order you took is approved.</p>
+    <a class="m-btn m-btn-primary" href="{{ url_for('officer.order_new') }}">Take your first order</a>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

@@ -224,4 +224,12 @@ class StockAdjustForm(FlaskForm):
 
 class OfficerForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired(), Length(max=120)])
-    phone = StringField("Phone", validators=[Optional(), Length(max=30)])
+    phone = StringField("Phone (used to sign in)", validators=[DataRequired(), Length(max=30)])
+    monthly_target = DecimalField(
+        "Monthly target (₹)", places=2, validators=[Optional(), NumberRange(min=0)]
+    )
+    password = PasswordField("Password", validators=[Optional(), Length(min=6, max=128)])
+    photo = FileField(
+        "Photo", validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"], "Images only")]
+    )
+    is_active = BooleanField("Active", default=True)

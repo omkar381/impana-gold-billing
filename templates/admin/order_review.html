@@ -1,0 +1,142 @@
+{% extends "admin/base_admin.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}{{ order.request_number }} - Impana Gold{% endblock %}
+
+{% block content %}
+{% set pending = order.status == 'pending' %}
+<section class="admin-section">
+  <div class="section-header">
+    <div>
+      <h1>{{ order.request_number }}</h1>
+      <p class="page-sub">Sent by <strong>{{ order.officer.name }}</strong> on {{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+    </div>
+    <div class="header-actions">
+      <a class="btn btn-secondary" href="{{ url_for('admin.order_requests') }}">Back to inbox</a>
+      {% if order.bill %}<a class="btn btn-primary" href="{{ url_for('admin.bill_detail', bill_id=order.bill.id) }}">View bill {{ order.bill.bill_number }}</a>{% endif %}
+    </div>
+  </div>
+
+  {% if not pending %}
+  <div class="notice notice-{{ {'approved': 'ok', 'rejected': 'bad', 'cancelled': 'muted'}[order.status] }}">
+    <strong>{{ {'approved': 'Approved', 'rejected': 'Rejected', 'cancelled': 'Cancelled by the officer'}[order.status] }}</strong>
+    {% if order.decided_at %} on {{ order.decided_at.strftime('%d %b %Y, %I:%M %p') }}{% endif %}
+    {% if order.decision_reason and order.status == 'rejected' %}<br>Reason: {{ order.decision_reason }}{% endif %}
+  </div>
+  {% endif %}
+
+  {% if hints and pending %}
+  <div class="notice notice-warn">
+    <strong>Possible duplicate.</strong> The same officer sent a similar order for this shop recently:
+    {% for h in hints %}<a href="{{ url_for('admin.order_review', order_id=h.id) }}">{{ h.request_number }}</a> ({{ h.status }}){{ ', ' if not loop.last }}{% endfor %}.
+  </div>
+  {% endif %}
+
+  <div class="review-grid">
+    <div class="card">
+      <h2>Shop</h2>
+      <dl class="kv">
+        <dt>Name</dt><dd><strong>{{ order.shop_name }}</strong></dd>
+        {% if order.customer %}
+          <dt>Phone</dt><dd>{{ order.customer.phone or '-' }}</dd>
+        {% else %}
+          <dt>Status</dt><dd><span class="tag-new">New shop proposed by the officer</span></dd>
+          <dt>Phone</dt><dd>{{ order.new_customer_phone or '-' }}</dd>
+          {% if order.new_customer_address %}<dt>Address</dt><dd>{{ order.new_customer_address }}</dd>{% endif %}
+          {% if order.new_customer_gstin %}<dt>GSTIN</dt><dd>{{ order.new_customer_gstin }}</dd>{% endif %}
+          {% if existing %}<dt>Match</dt><dd class="ok-text">Already in your customers as <strong>{{ existing.name }}</strong>. Approving will use that record.</dd>
+          {% else %}<dt>Match</dt><dd class="muted">Not in your customers. Approving will add this shop.</dd>{% endif %}
+        {% endif %}
+        {% if order.notes %}<dt>Officer note</dt><dd>{{ order.notes }}</dd>{% endif %}
+        <dt>Payment hint</dt><dd>{{ order.payment_mode|upper }} <span class="muted">(you confirm below)</span></dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Items</h2>
+      <form method="post" action="{{ url_for('admin.order_approve', order_id=order.id) }}" id="approve-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Product</th><th class="num">In stock</th><th class="num">Qty</th><th class="num">Rate (₹)</th><th class="num">Amount</th></tr>
+            </thead>
+            <tbody>
+              {% for i in order.items %}
+              {% set stock = i.product.stock_qty|float if i.product else 0 %}
+              <tr>
+                <td class="strong">{{ i.product_name }}<br><span class="muted">{{ i.unit }}</span></td>
+                <td class="num {{ 'bad-text' if stock < i.qty|float }}">{{ '%g'|format(stock) }}</td>
+                {% if pending %}
+                <td class="num"><input class="input input-sm num-input" type="number" step="0.001" min="0" name="qty_{{ i.id }}" value="{{ '%g'|format(i.qty|float) }}" data-rate-for="{{ i.id }}"></td>
+                <td class="num"><input class="input input-sm num-input" type="number" step="0.01" min="0.01" name="rate_{{ i.id }}" value="{{ '%.2f'|format(i.unit_price|float) }}" data-rate="{{ i.id }}"></td>
+                {% else %}
+                <td class="num">{{ '%g'|format(i.qty|float) }}</td>
+                <td class="num">{{ '%.2f'|format(i.unit_price|float) }}</td>
+                {% endif %}
+                <td class="num strong" data-amount="{{ i.id }}">₹ {{ '{:,.2f}'.format(i.line_total) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="review-total">
+          <span>{{ 'Estimated total (before GST)' if pending else ('Bill total' if order.bill else 'Estimated total') }}</span>
+          <strong id="review-total">₹ {{ '{:,.2f}'.format(order.bill.grand_total if order.bill else order.estimated_total) }}</strong>
+        </div>
+
+        {% if pending %}
+        <p class="muted">You can change a quantity or special rate before approving. Set a quantity to 0 to remove an item. GST is added automatically on the bill.</p>
+        <div class="approve-row">
+          <label class="field">
+            <span class="field-label">Payment mode</span>
+            <select name="payment_mode" class="input">
+              {% for m in modes %}<option value="{{ m }}" {{ 'selected' if m == order.payment_mode }}>{{ m|upper }}</option>{% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary btn-lg">{{ icon('check', 18) }}<span>Approve and create bill</span></button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% if pending %}
+  <div class="card reject-card">
+    <h2>Reject this order</h2>
+    <form method="post" action="{{ url_for('admin.order_reject', order_id=order.id) }}" class="inline-fields reject-form" data-confirm="Reject this order? The officer will see your reason.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="field">
+        <span class="field-label">Reason (shown to the officer)</span>
+        <input class="input" type="text" name="reason" maxlength="500" placeholder="e.g. Shop has pending dues, or wrong quantity" required>
+      </label>
+      <span></span>
+      <button class="btn btn-danger" type="submit">Reject</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if order.status == 'pending' %}
+<script>
+  (function () {
+    var form = document.getElementById("approve-form");
+    function recalc() {
+      var total = 0;
+      form.querySelectorAll("[data-rate]").forEach(function (rate) {
+        var id = rate.getAttribute("data-rate");
+        var qty = parseFloat(form.querySelector("[data-rate-for='" + id + "']").value) || 0;
+        var amt = qty * (parseFloat(rate.value) || 0);
+        total += amt;
+        form.querySelector("[data-amount='" + id + "']").textContent = "₹ " + amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      });
+      document.getElementById("review-total").textContent = "₹ " + total.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    form.addEventListener("input", recalc);
+  })();
+</script>
+{% endif %}
+{% endblock %}

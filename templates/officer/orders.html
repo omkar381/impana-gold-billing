@@ -1,0 +1,43 @@
+{% extends "officer/base.html" %}
+{% from "_icons.html" import icon %}
+{% from "officer/_macros.html" import status_pill %}
+{% block title %}Orders - Impana Sales{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <h1>My orders</h1>
+  <p>Orders you send are checked by the admin before a bill is made.</p>
+</header>
+
+<main class="m-page">
+  <nav class="chips" aria-label="Filter">
+    {% for key, label in [('all', 'All'), ('pending', 'Waiting'), ('approved', 'Approved'), ('rejected', 'Not approved'), ('cancelled', 'Cancelled')] %}
+    <a href="{{ url_for('officer.orders', status=key) }}" class="{{ 'is-active' if status == key }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if rows %}
+  <ul class="order-list order-list-card">
+    {% for r in rows %}
+    <li>
+      <a href="{{ url_for('officer.order_detail', order_id=r.id) }}">
+        <span class="order-main">
+          <strong>{{ r.shop_name }}</strong>
+          <small>{{ r.request_number }} &middot; {{ r.created_at.strftime('%d %b, %I:%M %p') }}</small>
+          <small>{{ r.items|length }} item{{ '' if r.items|length == 1 else 's' }}</small>
+        </span>
+        <span class="order-side"><strong>₹{{ r.estimated_total|inr }}</strong>{{ status_pill(r.status) }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    {{ icon('inbox', 34) }}
+    <p><strong>Nothing here yet</strong></p>
+    <p>{{ 'Orders you send will show up here.' if status == 'all' else 'No orders with this status.' }}</p>
+    <a class="m-btn m-btn-primary" href="{{ url_for('officer.order_new') }}">Take a new order</a>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}
