@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ bill.bill_number }} — Tax Invoice</title>
+  <title>{{ bill.bill_number }} — {{ 'Tax Invoice' if (gst_enabled and (bill.gst_amount or 0) > 0) else 'Bill of Supply' }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
 </head>
 
@@ -40,6 +40,9 @@
   {% set buyer_state = '' %}
   {% if bill.customer and bill.customer.state_code %}{% set buyer_state = bill.customer.state_code %}{% endif %}
   {% set is_igst = seller_state != buyer_state and buyer_state != '' %}
+  {# Exempt supplies (e.g. 30 kg bags) carry no tax -> Bill of Supply (Sec 31(3)(c) CGST Act) #}
+  {% set is_taxable = gst_enabled and gst_amount > 0 %}
+  {% set doc_title = 'TAX INVOICE' if is_taxable else 'BILL OF SUPPLY' %}
 
   <div class="a5-sheet">
     {% for copy_label in ['ORIGINAL', 'DUPLICATE'] %}
@@ -102,7 +105,7 @@
         </div>
         <div class="title-bar">
           <div class="title-bar-left"></div>
-          <div class="title-bar-center"><span class="title-center">TAX INVOICE</span></div>
+          <div class="title-bar-center"><span class="title-center">{{ doc_title }}</span></div>
           <div class="title-bar-right"><span class="title-right">{{ copy_label }}</span></div>
         </div>
 
