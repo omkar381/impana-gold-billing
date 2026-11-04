@@ -839,3 +839,50 @@ body {
     print-color-adjust: exact;
   }
 }
+/* ══ FIT-TO-ONE-A5-PAGE OVERRIDES ════════════════════════════════════
+   Each copy (ORIGINAL / DUPLICATE) must fit on a single A5 page.
+   Usable height = 210mm - 8mm top - 4mm bottom = 198mm.
+   ═══════════════════════════════════════════════════════════════════ */
+.invoice-page {
+  margin-bottom: 0;
+  min-height: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.brand-logo-xl { width: 78px; }
+.inv-header { min-height: 36px; }
+.inv-header-right { padding: 3px 8px; min-width: 120px; }
+.inv-header-left { padding: 3px 8px 2px; }
+.shop-tagline { padding: 2px 6px; margin-top: 1px; margin-bottom: 2px; }
+.contact-lines { margin-top: 1px; line-height: 1.35; }
+
+.items-table th { padding: 3px 5px; font-size: 7.5pt; }
+.items-table td { padding: 3px 5px; }
+.empty-row td { height: 11px; }
+.subtotal-row td { padding: 3px 6px; }
+.total-row-table td { padding: 4px 8px; }
+
+.footer-left, .footer-right { padding: 4px 8px; }
+.qr-img { width: 62px; height: 62px; }
+.qr-placeholder { width: 66px; }
+.terms-text { font-size: 6.5pt; line-height: 1.3; margin-bottom: 3px; }
+.cust-sig { margin-top: 6px; padding-top: 2px; }
+.declaration-text { margin-bottom: 4px; }
+.sig-stamp-gap { height: 36px; }
+
+/* Many-line bills (6+ items): squeeze rows further */
+.invoice-compact .items-table td { padding: 1.5px 5px; font-size: 8pt; }
+.invoice-compact .items-table td.c-name,
+.invoice-compact .items-table td.c-qty,
+.invoice-compact .items-table td.c-amount { font-size: 8pt; }
+.invoice-compact .empty-row { display: none; }
+.invoice-compact .sig-stamp-gap { height: 26px; }
+.invoice-compact .brand-logo-xl { width: 64px; }
+
+/* Keep "30kg/20 BAGS" on one line so each item row is a single line tall */
+.items-table td.c-qty, .items-table th.c-qty { width: 92px; white-space: nowrap; font-size: 8.5pt; }
+.items-table td.c-rate, .items-table th.c-rate { width: 52px; }
+.items-table td.c-amount, .items-table th.c-amount { width: 70px; }
+.items-table td.c-hsn, .items-table th.c-hsn { width: 58px; white-space: nowrap; }
+.items-table td.c-name { font-size: 8.5pt; }

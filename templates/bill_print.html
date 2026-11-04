@@ -50,7 +50,7 @@
     <div class="cut-line"><span>✂ cut here</span></div>
     {% endif %}
     <div class="invoice-page">
-      <div class="invoice">
+      <div class="invoice{% if bill.items|length > 5 %} invoice-compact{% endif %}">
 
         {# ── ROW 1: HEADER ───────────────────────────────────────── #}
         <div class="inv-header">
