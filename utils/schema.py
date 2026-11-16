@@ -72,3 +72,20 @@ def ensure_marketing_officer_schema(db) -> None:
     except Exception:  # never stop the app from booting
         db.session.rollback()
         log.exception("Marketing officer schema check failed")
+
+
+def ensure_owner_app_schema(db) -> None:
+    """Create the owner phone app's table on a database that already exists.
+
+    Same reason as above: production does not run migrations on deploy, so the
+    new table is created at startup. It only ever adds the table when missing.
+    """
+    from models import OwnerPasskey
+
+    try:
+        if "bills" not in set(inspect(db.engine).get_table_names()):
+            return  # brand-new database: create_all / migrations will handle it
+        OwnerPasskey.__table__.create(db.engine, checkfirst=True)
+    except Exception:  # never stop the app from booting
+        db.session.rollback()
+        log.exception("Owner app schema check failed")

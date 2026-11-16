@@ -47,9 +47,16 @@ def create_app(config_name: str = None) -> Flask:
         return db.session.get(AdminUser, int(user_id))
 
     # ── Schema safeguard (adds Marketing Officer table/columns if missing) ──
-    from utils.schema import ensure_marketing_officer_schema
+    from utils.schema import ensure_marketing_officer_schema, ensure_owner_app_schema
     with app.app_context():
         ensure_marketing_officer_schema(db)
+        ensure_owner_app_schema(db)
+
+    if app.config["SECRET_KEY"] == "change-me-in-production" and not app.config.get("TESTING"):
+        app.logger.warning(
+            "SECRET_KEY is the built-in default. Set a long random SECRET_KEY in the environment: "
+            "it signs logins and the WhatsApp bill links."
+        )
 
     # ── Brand logo available to every template ─────────────────────────────
     @app.context_processor
@@ -78,12 +85,14 @@ def create_app(config_name: str = None) -> Flask:
     from admin import admin_bp
     from api import api_bp
     from officer_app import officer_bp
+    from owner_app import owner_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(officer_bp)
+    app.register_blueprint(owner_bp)
 
     # ── Health-check route ─────────────────────────────────────────────────
     from flask import jsonify

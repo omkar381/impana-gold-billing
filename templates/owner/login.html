@@ -1,0 +1,43 @@
+{% extends "owner/base.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Sign in · Impana Gold Billing{% endblock %}
+{% block body_class %}solo{% endblock %}
+
+{% block body %}
+<main class="solo-main">
+  <div class="solo-head">
+    <img class="solo-logo" src="{{ brand_logo_url }}" alt="Impana Gold" width="72" height="72">
+    <h1>Impana Gold</h1>
+    <p>Billing</p>
+  </div>
+
+  <form method="post" class="card solo-card" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Sign in</h2>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% for category, message in messages %}
+    <div class="notice notice-{{ 'danger' if category == 'danger' else 'info' }}" role="alert">{{ icon('alert', 18) }}<span>{{ message }}</span></div>
+    {% endfor %}
+    {% endwith %}
+
+    <label class="field">
+      <span class="field-label">Username</span>
+      <input class="input" type="text" name="username" value="{{ username }}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Password</span>
+      <span class="input-wrap">
+        <input class="input" type="password" name="password" id="pw" autocomplete="current-password" required>
+        <button type="button" class="input-action" data-toggle-password="pw" aria-label="Show password">
+          <span class="when-hidden">{{ icon('eye', 20) }}</span><span class="when-shown">{{ icon('eye-off', 20) }}</span>
+        </button>
+      </span>
+    </label>
+
+    <button type="submit" class="btn btn-primary btn-lg btn-block">Sign in</button>
+    <p class="hint center">You will stay signed in on this phone for 90 days.</p>
+  </form>
+</main>
+{% endblock %}

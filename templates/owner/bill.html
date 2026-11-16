@@ -1,0 +1,94 @@
+{% extends "owner/app.html" %}
+{% from "owner/_icons.html" import icon, whatsapp %}
+{% block title %}{{ bill.bill_number }} · Impana Gold Billing{% endblock %}
+{% block heading %}{{ 'Bill saved' if is_new else bill.bill_number }}{% endblock %}
+
+{% block leading %}
+<a class="appbar-back" href="{{ url_for('owner.bills') }}" aria-label="Back to bills">{{ icon('chevron-left', 24) }}</a>
+{% endblock %}
+
+{% block content %}
+<div id="bill" data-phone-url="{{ url_for('owner.api_bill_phone', bill_id=bill.id) }}" data-link="{{ link }}">
+
+  {% if is_new %}
+  <div class="success">
+    <div class="success-mark">{{ icon('check', 32) }}</div>
+    <h2>Bill saved</h2>
+    <p>{{ bill.bill_number }}</p>
+  </div>
+  {% endif %}
+
+  {% if bill.status == 'cancelled' %}
+  <div class="notice notice-danger">{{ icon('alert', 18) }}<span>This bill was cancelled{% if bill.cancel_reason %}: {{ bill.cancel_reason }}{% endif %}. The buyer’s link no longer shows it.</span></div>
+  {% endif %}
+
+  {% if bill.status != 'cancelled' %}
+  <div class="card">
+    <h2 class="card-title">Send to buyer</h2>
+    {% if has_number %}
+    <a class="btn btn-whatsapp btn-lg btn-block" href="{{ wa_url }}" target="_blank" rel="noopener">{{ whatsapp(22) }}<span>Send on WhatsApp</span></a>
+    <p class="hint center" style="margin-top:10px">Opens WhatsApp to {{ bill.customer.name }}, {{ bill.customer.phone }}. Just tap send.</p>
+    {% else %}
+    <form class="wa-form" id="wa-form" novalidate>
+      <label class="field" style="margin:0">
+        <span class="field-label">Buyer’s WhatsApp number</span>
+        <input class="input" id="wa-phone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" autocomplete="off">
+      </label>
+      <div class="notice notice-danger" id="wa-error" role="alert" style="margin:0" hidden>{{ icon('alert', 18) }}<span></span></div>
+      <button type="submit" class="btn btn-whatsapp btn-lg btn-block">{{ whatsapp(22) }}<span>Send on WhatsApp</span></button>
+    </form>
+    {% endif %}
+    <div class="actions-2" style="margin-top:12px">
+      <a class="btn btn-secondary" href="{{ link }}" target="_blank" rel="noopener">{{ icon('external', 18) }}<span>View bill</span></a>
+      <button type="button" class="btn btn-secondary" id="copy-link">{{ icon('copy', 18) }}<span>Copy link</span></button>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="bill-head">
+      <div>
+        <div class="bill-no">{{ bill.bill_number }}</div>
+        <div class="bill-when">{{ bill.bill_date.strftime('%d %b %Y, %I:%M %p').lstrip('0') }}</div>
+      </div>
+      <div class="bill-total">
+        <div class="big num">₹{{ bill.grand_total|inr(2) }}</div>
+        <span class="badge {{ 'badge-danger' if bill.status == 'cancelled' else 'badge-success' }}">{{ 'Cancelled' if bill.status == 'cancelled' else ('On credit' if bill.payment_mode == 'credit' else 'Paid · ' ~ ('UPI' if bill.payment_mode == 'upi' else bill.payment_mode|capitalize)) }}</span>
+      </div>
+    </div>
+
+    <div class="items">
+      {% for item in bill.items %}
+      <div class="item">
+        <div><div class="i-name">{{ item.product_name }}</div><div class="i-qty num">{{ '%g'|format(item.qty|float) }} {{ item.unit }} × ₹{{ item.unit_price|inr(2) }}</div></div>
+        <div class="i-amt num">₹{{ item.line_total|inr(2) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <dl class="kvs" style="margin-top:6px;border-top:1px solid var(--line)">
+      <div class="kv"><span class="k">Subtotal</span><span class="v num">₹{{ bill.subtotal|inr(2) }}</span></div>
+      {% if bill.discount_amount and bill.discount_amount > 0 %}<div class="kv"><span class="k">Discount</span><span class="v num">− ₹{{ bill.discount_amount|inr(2) }}</span></div>{% endif %}
+      {% if bill.gst_amount and bill.gst_amount > 0 %}<div class="kv"><span class="k">GST</span><span class="v num">₹{{ bill.gst_amount|inr(2) }}</span></div>{% endif %}
+      <div class="kv"><span class="k"><strong>Total</strong></span><span class="v num"><strong>₹{{ bill.grand_total|inr(2) }}</strong></span></div>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Details</h2>
+    <dl class="kvs">
+      <div class="kv"><dt>Buyer</dt><dd>{{ bill.customer.name if bill.customer else 'Walk-in customer' }}</dd></div>
+      {% if bill.customer and bill.customer.phone %}<div class="kv"><dt>Mobile</dt><dd class="num">{{ bill.customer.phone }}</dd></div>{% endif %}
+      <div class="kv"><dt>Payment</dt><dd>{{ bill.payment_mode|capitalize if bill.payment_mode != 'upi' else 'UPI' }}</dd></div>
+      {% if bill.marketing_officer_name %}<div class="kv"><dt>Officer</dt><dd>{{ bill.marketing_officer_name }}</dd></div>{% endif %}
+      {% if bill.notes %}<div class="kv"><dt>Note</dt><dd>{{ bill.notes }}</dd></div>{% endif %}
+    </dl>
+  </div>
+
+  {% if is_new %}
+  <a class="btn btn-primary btn-lg btn-block" href="{{ url_for('owner.home') }}" style="margin-top:12px">{{ icon('plus', 20) }}<span>New bill</span></a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_bills.js', v=asset_v) }}"></script>{% endblock %}

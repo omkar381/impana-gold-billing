@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Impana Gold Billing{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('owner.manifest') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/owner.css', v=asset_v) }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-home="{{ url_for('owner.home') }}" data-lock="{{ url_for('owner.lock') }}" data-login="{{ url_for('owner.login') }}">
+  {% block body %}{% endblock %}
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='js/owner.js', v=asset_v) }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

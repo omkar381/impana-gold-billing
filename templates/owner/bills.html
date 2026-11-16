@@ -1,0 +1,25 @@
+{% extends "owner/app.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Bills · Impana Gold Billing{% endblock %}
+{% block heading %}Bills{% endblock %}
+
+{% block content %}
+<div id="bills" data-url="{{ url_for('owner.bills') }}">
+  {% if today %}
+  <div class="today">
+    <div><div class="t-label">Today’s sales</div><div class="t-total num">₹{{ today.total|inr(2) }}</div></div>
+    <div class="t-count"><strong class="num">{{ today.count }}</strong>{{ 'bill' if today.count == 1 else 'bills' }}</div>
+  </div>
+  {% endif %}
+
+  <div class="search" id="bsearch" style="margin-top:14px">
+    <span class="ico-lead">{{ icon('search', 20) }}</span>
+    <input class="input" id="bq" type="search" value="{{ q }}" placeholder="Search name, mobile or bill no." autocomplete="off" enterkeyhint="search" aria-label="Search bills">
+    <button type="button" class="clear" id="bq-clear" aria-label="Clear search">{{ icon('x', 18) }}</button>
+  </div>
+
+  <div id="bill-groups">{% include "owner/_bill_rows.html" %}</div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_bills.js', v=asset_v) }}"></script>{% endblock %}

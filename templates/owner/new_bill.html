@@ -1,0 +1,123 @@
+{% extends "owner/app.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}New bill · Impana Gold Billing{% endblock %}
+{% block heading %}New bill{% endblock %}
+
+{% block content %}
+<div id="billing"
+     data-gst="{{ 1 if gst_enabled else 0 }}"
+     data-products="{{ url_for('owner.api_products') }}"
+     data-customers="{{ url_for('owner.api_customers') }}"
+     data-save="{{ url_for('owner.api_create_bill') }}">
+
+  <div class="finder">
+    <div class="search" id="search">
+      <span class="ico-lead">{{ icon('search', 20) }}</span>
+      <input class="input" id="q" type="search" placeholder="Search products" autocomplete="off" autocapitalize="none" enterkeyhint="search" aria-label="Search products">
+      <button type="button" class="clear" id="q-clear" aria-label="Clear search">{{ icon('x', 18) }}</button>
+    </div>
+    <div class="chips" id="chips" role="tablist" aria-label="Categories"></div>
+  </div>
+
+  <div class="plist" id="plist" aria-live="polite">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block after_main %}
+<div class="cartbar" id="cartbar" hidden>
+  <div class="cartbar-info">
+    <div class="cartbar-count" id="cart-count">0 items</div>
+    <div class="cartbar-total num" id="cart-total">₹0</div>
+  </div>
+  <button type="button" class="btn btn-primary btn-lg" id="review-btn">Review bill {{ icon('chevron-right', 18) }}</button>
+</div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Review bill">
+  <div class="sheet-bar">
+    <button type="button" class="icon-btn" id="sheet-back" aria-label="Back to products">{{ icon('chevron-left', 24) }}</button>
+    <h2>Review bill</h2>
+    <button type="button" class="link-btn" id="clear-bill">Clear</button>
+  </div>
+
+  <div class="sheet-body">
+    <div class="sheet-inner">
+
+      <h3 class="section-title">Items</h3>
+      <div class="card" id="lines"></div>
+
+      <h3 class="section-title">Buyer</h3>
+      <div class="card">
+        <label class="field">
+          <span class="field-label">WhatsApp number</span>
+          <span class="input-wrap phone-wrap" id="phone-wrap">
+            <input class="input" id="buyer-phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="10-digit mobile number">
+            <span class="tick">{{ icon('check', 20) }}</span>
+          </span>
+        </label>
+        <label class="field" style="margin-bottom:0">
+          <span class="field-label">Name <span class="muted" style="font-weight:400">(optional)</span></span>
+          <input class="input" id="buyer-name" type="text" autocomplete="off" placeholder="Shop or customer name">
+        </label>
+        <div class="suggest" id="suggest" hidden></div>
+        <p class="hint" style="margin-top:10px">The bill is sent to this number on WhatsApp.</p>
+      </div>
+
+      <h3 class="section-title">Payment</h3>
+      <div class="card">
+        <div class="seg" id="pay" role="group" aria-label="Payment mode">
+          <button type="button" data-v="cash" class="is-on">Cash</button>
+          <button type="button" data-v="upi">UPI</button>
+          <button type="button" data-v="card">Card</button>
+          <button type="button" data-v="credit">Credit</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <button type="button" class="more-toggle" id="more-toggle" aria-expanded="false" aria-controls="more">
+          <span>Discount, notes{% if officers %} and officer{% endif %}</span>{{ icon('chevron-down', 20) }}
+        </button>
+        <div class="more-body" id="more" hidden>
+          <div class="disc-row">
+            <label class="field">
+              <span class="field-label">Discount</span>
+              <input class="input" id="disc-amt" type="text" inputmode="decimal" placeholder="0">
+            </label>
+            <div class="seg seg-2" id="disc-type" role="group" aria-label="Discount type">
+              <button type="button" data-v="flat" class="is-on">₹</button>
+              <button type="button" data-v="percent">%</button>
+            </div>
+          </div>
+          {% if officers %}
+          <label class="field">
+            <span class="field-label">Marketing officer</span>
+            <select class="select" id="officer">
+              <option value="">None</option>
+              {% for o in officers %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}
+            </select>
+          </label>
+          {% endif %}
+          <label class="field" style="margin-bottom:0">
+            <span class="field-label">Note</span>
+            <textarea class="textarea" id="notes" maxlength="500" placeholder="Anything to remember about this bill"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <h3 class="section-title">Summary</h3>
+      <div class="card totals" id="totals"></div>
+
+      <div class="notice notice-danger" id="save-error" role="alert" style="margin-top:14px" hidden>{{ icon('alert', 18) }}<span></span></div>
+    </div>
+  </div>
+
+  <div class="sheet-foot">
+    <div class="inner">
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="save-btn">Save bill</button>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_billing.js', v=asset_v) }}"></script>{% endblock %}

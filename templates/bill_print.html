@@ -3,9 +3,25 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# The printed bill is A5 (about 560px). On a phone the buyer sees it scaled to fit the screen. #}
+  <meta name="viewport" content="{{ 'width=560' if public else 'width=device-width, initial-scale=1' }}">
+  {% if public %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <title>{{ bill.bill_number }} — {{ 'Tax Invoice' if (gst_enabled and (bill.gst_amount or 0) > 0) else 'Bill of Supply' }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+  {% if public %}
+  <style>
+    @media screen {
+      body { background: #eef1f4; padding: 16px 0 28px; }
+      .a5-sheet { box-shadow: 0 2px 14px rgba(16, 24, 40, 0.12); }
+      .public-bar { max-width: 148mm; margin: 18px auto 0; text-align: center; font-family: "Outfit", "Segoe UI", Arial, sans-serif; }
+      .public-bar button {
+        width: 100%; padding: 16px; border: 0; border-radius: 12px; background: #1d7a3c; color: #fff;
+        font: 600 18px "Outfit", "Segoe UI", Arial, sans-serif; cursor: pointer;
+      }
+      .public-bar p { margin: 10px 0 0; color: #667085; font-size: 13px; }
+    }
+  </style>
+  {% endif %}
 </head>
 
 <body>
@@ -45,7 +61,7 @@
   {% set doc_title = 'TAX INVOICE' if is_taxable else 'BILL OF SUPPLY' %}
 
   <div class="a5-sheet">
-    {% for copy_label in ['ORIGINAL', 'DUPLICATE'] %}
+    {% for copy_label in (copies or ['ORIGINAL', 'DUPLICATE']) %}
     {% if not loop.first %}
     <div class="cut-line"><span>✂ cut here</span></div>
     {% endif %}
@@ -354,11 +370,18 @@
   </div>{# end .a5-sheet #}
 
   {# ── SCREEN ACTION BAR ─────────────────────────────────────── #}
+  {% if public %}
+  <div class="no-print public-bar">
+    <button type="button" onclick="window.print()">Save as PDF</button>
+    <p>Original bill from {{ shop_name }}. Tap the button, then choose “Save as PDF”.</p>
+  </div>
+  {% else %}
   <div class="no-print action-bar">
     <button onclick="window.print()" class="act-btn act-print">🖨&nbsp; Print Invoice</button>
     <a href="/bill/{{ bill.id }}/pdf" class="act-btn act-pdf">📄&nbsp; Download PDF</a>
     <a href="/" class="act-btn act-back">← Back to POS</a>
   </div>
+  {% endif %}
 
   {% if auto_print %}
   <script>

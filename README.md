@@ -52,7 +52,27 @@ flask run
 - POS: http://localhost:5000/
 - Login: http://localhost:5000/login
 
-## 9. Production deployment (gunicorn + nginx + systemd + SSL)
+## 9. Owner phone app (`/b`)
+An installable web app (PWA) for billing from a phone. Open `https://<your-site>/b/` in Chrome on Android, sign in with
+the admin account, and use Chrome's "Install app" (or the button on the Account tab).
+
+- **Sign in once.** The phone stays signed in for 90 days (a signed cookie). Deactivating the admin or changing the
+  password signs every phone out.
+- **Fingerprint lock.** On first sign-in the phone registers its fingerprint (WebAuthn). After that the app asks for it
+  every time it opens or returns after a minute in the background. If the fingerprint fails, Android offers the phone's
+  own screen-lock PIN. The server enforces the lock: no bill or customer data is served while locked.
+- **Billing.** Search a product, tap quantity, pick the buyer, save. Saving uses the same routine as the desktop screen
+  (`utils/billing_service.py`), so GST, stock and bill numbers always match.
+- **WhatsApp.** After saving, "Send on WhatsApp" opens the buyer's chat with the message typed; the owner taps Send.
+  No paid API. The message holds a private link (`/r/<signed token>`) that opens the **original** bill without a login.
+
+Deployment notes:
+- It needs **HTTPS** (fingerprint lock and installing only work on secure sites) and a real **`SECRET_KEY`** in the
+  environment: it signs the phone login and the buyer links. Changing it invalidates every link already sent.
+- `pip install -r requirements.txt` (adds `webauthn`). The `owner_passkeys` table is created automatically on startup.
+- Tests: `pytest tests` (they use a throwaway SQLite database, never the real one).
+
+## 10. Production deployment (gunicorn + nginx + systemd + SSL)
 Example gunicorn command:
 ```bash
 gunicorn -c gunicorn.conf.py "app:create_app()"

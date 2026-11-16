@@ -1,0 +1,25 @@
+{% extends "owner/base.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Locked · Impana Gold Billing{% endblock %}
+{% block body_class %}solo lockscreen{% endblock %}
+
+{% block body %}
+<main class="solo-main lock-main" id="lock" data-auth-options="{{ url_for('owner.passkey_auth_options') }}" data-auth-verify="{{ url_for('owner.passkey_auth_verify') }}" data-next="{{ next }}">
+  <div class="solo-head">
+    <img class="solo-logo" src="{{ brand_logo_url }}" alt="Impana Gold" width="72" height="72">
+    <h1>Impana Gold</h1>
+    <p>Billing is locked</p>
+  </div>
+
+  <button type="button" class="lock-btn" id="unlock-btn" aria-label="Unlock with fingerprint">{{ icon('fingerprint', 56) }}</button>
+  <p class="lock-status" id="lock-status" role="status">Touch the sensor to unlock</p>
+  <p class="hint center">If the fingerprint does not work,<br>use your phone’s screen-lock PIN.</p>
+
+  <form method="post" action="{{ url_for('owner.logout') }}" class="center lock-foot">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="link-btn">Sign out of this phone</button>
+  </form>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_lock.js', v=asset_v) }}"></script>{% endblock %}

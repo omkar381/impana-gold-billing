@@ -1,0 +1,39 @@
+{% extends "owner/app.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Account · Impana Gold Billing{% endblock %}
+{% block heading %}Account{% endblock %}
+
+{% block content %}
+<div id="account">
+  <div class="card">
+    <div class="profile">
+      <div class="avatar">{{ g.owner.username[:1]|upper }}</div>
+      <div><div class="profile-name">{{ g.owner.username }}</div><div class="profile-role">{{ g.owner.role }}</div></div>
+    </div>
+  </div>
+
+  <h3 class="section-title">This phone</h3>
+  <div class="card" style="padding-top:4px;padding-bottom:4px">
+    <div class="status-row">
+      <span class="status-ico">{{ icon('clock', 20) }}</span>
+      <div class="status-text"><strong>Signed in</strong><span>{% if until %}Until {{ until.strftime('%d %b %Y') }}{% else %}For 90 days{% endif %}</span></div>
+    </div>
+    <div class="status-row">
+      <span class="status-ico {{ '' if lock_on else 'is-off' }}">{{ icon('fingerprint', 20) }}</span>
+      <div class="status-text"><strong>Fingerprint lock</strong><span>{{ 'Asked every time the app opens' if lock_on else 'This phone has no fingerprint or screen lock' }}</span></div>
+      <span class="badge {{ 'badge-success' if lock_on else 'badge-muted' }}">{{ 'On' if lock_on else 'Off' }}</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-secondary btn-lg btn-block" id="install-btn" hidden>{{ icon('download', 20) }}<span>Install app on this phone</span></button>
+    <a class="btn btn-secondary btn-lg btn-block" href="{{ url_for('owner.lock') }}">{{ icon('lock', 20) }}<span>Lock now</span></a>
+    <form method="post" action="{{ url_for('owner.logout') }}" id="logout-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger-quiet btn-lg btn-block">{{ icon('log-out', 20) }}<span>Sign out of this phone</span></button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_bills.js', v=asset_v) }}"></script>{% endblock %}

@@ -71,6 +71,8 @@ class TestingConfig(BaseConfig):
     DEBUG = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # The pool options in BaseConfig are for PostgreSQL; SQLite's in-memory pool rejects them.
+    SQLALCHEMY_ENGINE_OPTIONS = {}
 
 
 # Map FLASK_ENV string → config class

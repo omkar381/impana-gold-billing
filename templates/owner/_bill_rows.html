@@ -1,0 +1,28 @@
+{% from "owner/_icons.html" import icon %}
+{# Day-grouped rows. Rendered whole on the Bills page and alone for search / "Show more". #}
+{% for g in groups %}
+<section class="group" data-label="{{ g.label }}">
+  <h3 class="section-title">{{ g.label }}</h3>
+  <div class="blist">
+    {% for b in g.bills %}
+    <a class="brow{{ ' is-cancelled' if b.status == 'cancelled' }}" href="{{ url_for('owner.bill_detail', bill_id=b.id) }}">
+      <div class="brow-main">
+        <div class="brow-name">{{ b.customer.name if b.customer else 'Walk-in customer' }}</div>
+        <div class="brow-sub">{{ b.bill_number }} · {{ b.bill_date.strftime('%I:%M %p').lstrip('0') }}</div>
+      </div>
+      <div class="brow-amt">
+        <div class="amt num">₹{{ b.grand_total|inr(2) }}</div>
+        {% if b.status == 'cancelled' %}<span class="badge badge-danger">Cancelled</span>{% endif %}
+      </div>
+      <span class="ico-chev">{{ icon('chevron-right', 18) }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% if not groups %}
+<div class="empty card"><strong>{{ 'No bills found' if q else 'No bills yet' }}</strong>{{ 'Try a different name, number or bill number.' if q else 'Bills you make will appear here.' }}</div>
+{% endif %}
+{% if has_more %}
+<div class="more-wrap" data-more data-next="{{ page + 1 }}"><button type="button" class="btn btn-secondary btn-block" id="show-more">Show more</button></div>
+{% endif %}

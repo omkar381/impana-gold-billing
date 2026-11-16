@@ -443,3 +443,33 @@ class OrderRequestItem(db.Model):
     line_total = db.Column(db.Numeric(12, 2), nullable=False)
 
     product = db.relationship("Product")
+
+
+# ---------------------------------------------------------------------------
+# 10. OwnerPasskey — fingerprint lock for the owner's phone app (/b)
+# ---------------------------------------------------------------------------
+
+class OwnerPasskey(db.Model):
+    """A fingerprint / screen-lock credential registered on one phone.
+
+    Only the public key is stored, so a copy of this table cannot unlock anything.
+    `device_id` ties the credential to the phone that created it, so a second
+    phone has to set up its own lock.
+    """
+
+    __tablename__ = "owner_passkeys"
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_user_id = db.Column(
+        db.Integer, db.ForeignKey("admin_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    device_id = db.Column(db.String(40), nullable=False, index=True)
+    credential_id = db.Column(db.String(512), unique=True, nullable=False)  # base64url
+    public_key = db.Column(db.Text, nullable=False)                         # base64url COSE key
+    sign_count = db.Column(db.Integer, default=0, nullable=False)
+    label = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime(timezone=True), default=now_ist, nullable=False)
+    last_used_at = db.Column(db.DateTime(timezone=True))
+
+    def __repr__(self):
+        return f"<OwnerPasskey user={self.admin_user_id} device={self.device_id[:6]}>"

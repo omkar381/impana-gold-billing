@@ -1,0 +1,40 @@
+{% extends "owner/base.html" %}
+{% from "owner/_icons.html" import icon %}
+{# The signed-in, unlocked shell: top bar, content, bottom tabs. #}
+
+{% block head %}
+  <script>
+    // A fresh launch of the app always starts at the lock screen (like a banking app).
+    try {
+      if (!sessionStorage.getItem("ig_open")) {
+        location.replace({{ url_for('owner.lock', next=request.full_path.rstrip('?')) | tojson }});
+      }
+    } catch (e) {}
+  </script>
+{% endblock %}
+
+{% block body_class %}app{% endblock %}
+
+{% block body %}
+<header class="appbar">
+  {% block leading %}
+  <a class="appbar-brand" href="{{ url_for('owner.home') }}" aria-label="Impana Gold">
+    <img src="{{ brand_logo_url }}" alt="" width="30" height="30">
+  </a>
+  {% endblock %}
+  <h1 class="appbar-title">{% block heading %}{% endblock %}</h1>
+  <div class="appbar-actions">{% block actions %}{% endblock %}</div>
+</header>
+
+<main class="page {% block page_class %}{% endblock %}">
+  {% block content %}{% endblock %}
+</main>
+
+{% block after_main %}{% endblock %}
+
+<nav class="tabbar" aria-label="Main">
+  <a href="{{ url_for('owner.home') }}" class="tab {{ 'is-active' if request.endpoint == 'owner.home' }}">{{ icon('receipt', 22) }}<span>New bill</span></a>
+  <a href="{{ url_for('owner.bills') }}" class="tab {{ 'is-active' if request.endpoint in ('owner.bills', 'owner.bill_detail') }}">{{ icon('clock', 22) }}<span>Bills</span></a>
+  <a href="{{ url_for('owner.account') }}" class="tab {{ 'is-active' if request.endpoint == 'owner.account' }}">{{ icon('user', 22) }}<span>Account</span></a>
+</nav>
+{% endblock %}

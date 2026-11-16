@@ -1,0 +1,14 @@
+{% extends "owner/base.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Offline · Impana Gold Billing{% endblock %}
+{% block body_class %}solo{% endblock %}
+{% block body %}
+<main class="solo-main">
+  <div class="solo-head">
+    <div class="lock-badge muted-badge">{{ icon('wifi-off', 36) }}</div>
+    <h1>No internet</h1>
+    <p>Bills need a connection so stock and numbers stay correct.</p>
+  </div>
+  <button type="button" class="btn btn-primary btn-lg btn-block" onclick="location.reload()">Try again</button>
+</main>
+{% endblock %}

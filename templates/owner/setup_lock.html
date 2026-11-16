@@ -1,0 +1,41 @@
+{% extends "owner/base.html" %}
+{% from "owner/_icons.html" import icon %}
+{% block title %}Fingerprint lock · Impana Gold Billing{% endblock %}
+{% block body_class %}solo{% endblock %}
+
+{% block body %}
+<main class="solo-main">
+  <div class="solo-head">
+    <div class="lock-badge">{{ icon('fingerprint', 40) }}</div>
+    <h1>Protect your bills</h1>
+    <p>Turn on the fingerprint lock for this phone.</p>
+  </div>
+
+  <section class="card solo-card" id="setup" data-register-options="{{ url_for('owner.passkey_register_options') }}" data-register-verify="{{ url_for('owner.passkey_register_verify') }}">
+    <ul class="checklist">
+      <li>{{ icon('check', 18) }}<span>The app asks for your fingerprint every time you open it.</span></li>
+      <li>{{ icon('check', 18) }}<span>If the fingerprint does not work, use your phone’s screen-lock PIN.</span></li>
+      <li>{{ icon('check', 18) }}<span>Nobody else can bill, even on your unlocked phone.</span></li>
+    </ul>
+
+    <div class="notice notice-danger" id="setup-error" role="alert" hidden>{{ icon('alert', 18) }}<span></span></div>
+
+    <button type="button" class="btn btn-primary btn-lg btn-block" id="setup-btn">{{ icon('fingerprint', 20) }}<span>Turn on fingerprint lock</span></button>
+  </section>
+
+  <section class="card solo-card" id="unsupported" hidden>
+    <div class="notice notice-info">{{ icon('alert', 18) }}<span>This phone has no fingerprint or screen lock that the app can use. Set a screen lock in your phone’s settings to protect your bills.</span></div>
+    <form method="post" action="{{ url_for('owner.setup_lock_skip') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary btn-lg btn-block">Continue without lock</button>
+    </form>
+  </section>
+
+  <form method="post" action="{{ url_for('owner.logout') }}" class="center">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="link-btn">Sign out</button>
+  </form>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/owner_lock.js', v=asset_v) }}"></script>{% endblock %}
