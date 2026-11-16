@@ -1,4 +1,13 @@
-/* owner_billing.js — the phone billing screen: pick products, review, save. */
+/* owner_billing.js — the phone billing screen: pick products, review, save.
+ *
+ * Adding products works exactly like the desktop screen:
+ *   + 1 kg          adds 1 kg to the normal line
+ *   x 30 kg Bag     adds 30 kg per bag (bag count next to it)
+ *   Loose + Qty     adds the typed quantity as a separate LOOSE line (GST is charged)
+ *   Qty + Add       adds the typed quantity to the normal line
+ *   Rate            a typed rate replaces that line's rate
+ * A normal line of 30, 60, 90... kg is a bag line: no GST (same rule as the server).
+ */
 (function () {
   "use strict";
 
@@ -7,14 +16,14 @@
   if (!root) return;
 
   var GST_ENABLED = root.dataset.gst === "1";
-  var STORE_KEY = "ig_owner_bill_v1";
+  var STORE_KEY = "ig_owner_bill_v2";
   var $ = function (id) { return document.getElementById(id); };
   var esc = IG.esc;
 
   var state = {
     products: [], categories: [], byId: {},
-    cat: 0, q: "",
-    cart: {},                       // product id -> {id, qty, price, loose}
+    cat: 0, q: "", open: null,     // open = product whose add-options are showing
+    cart: {},                      // line key -> {key, id, qty, price, loose}
     buyer: { id: null, name: "", phone: "", pickedPhone: "" },
     pay: "cash", discType: "flat", discAmt: "", officer: "", notes: "",
   };
@@ -28,23 +37,28 @@
     discAmt: $("disc-amt"), officer: $("officer"), notes: $("notes"),
   };
 
-  // ── Numbers (same rules as the server: bills.py save_bill) ───────────
+  // ── Numbers (same rules as the server: utils/billing_service.py) ─────
   function round2(x) { return Math.round((x + Number.EPSILON) * 100) / 100; }
+  function round3(x) { return Math.round((x + Number.EPSILON) * 1000) / 1000; }
   function fmtQty(n) { return String(parseFloat(Number(n).toFixed(3))); }
   function money(n) { return "₹" + IG.inr(n, 2); }
   function moneyShort(n) { return "₹" + IG.inr(n, Number.isInteger(round2(n)) ? 0 : 2); }
+  function num(v) { return parseFloat(String(v == null ? "" : v).replace(",", ".")); }
 
-  function isBag(p, line) {
-    return !line.loose && p.unit === "kg" && line.qty >= 30 && line.qty % 30 === 0;
+  // Never a plain number, so the lines keep the order they were added in.
+  function keyOf(id, loose) { return "p" + id + (loose ? ":L" : ""); }
+  function isBagLine(p, line) { return p.unit === "kg" && !line.loose && line.qty >= 30 && line.qty % 30 === 0; }
+  function qtyInBill(id) {
+    return [keyOf(id, false), keyOf(id, true)].reduce(function (sum, k) { return sum + (state.cart[k] ? state.cart[k].qty : 0); }, 0);
   }
 
   function calc() {
     var subtotal = 0, gst = 0, count = 0;
-    Object.keys(state.cart).forEach(function (id) {
-      var line = state.cart[id], p = state.byId[id];
+    Object.keys(state.cart).forEach(function (k) {
+      var line = state.cart[k], p = state.byId[line.id];
       if (!p) return;
       var total = round2(line.qty * line.price);
-      var rate = isBag(p, line) ? 0 : p.gst;
+      var rate = isBagLine(p, line) ? 0 : p.gst;
       subtotal += total;
       gst += round2(total * rate / 100);
       count++;
@@ -72,8 +86,9 @@
     try {
       var saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
       if (!saved) return;
-      Object.keys(saved.cart || {}).forEach(function (id) {
-        if (state.byId[id]) state.cart[id] = saved.cart[id];
+      Object.keys(saved.cart || {}).forEach(function (k) {
+        var line = saved.cart[k];
+        if (line && state.byId[line.id]) state.cart[k] = line;
       });
       state.buyer = Object.assign(state.buyer, saved.buyer || {});
       state.pay = saved.pay || "cash";
@@ -96,49 +111,88 @@
 
   // Photos are shown only if the shop has uploaded some; a column of identical letters adds nothing.
   var hasPhotos = false;
-
   function thumb(p) {
     if (!hasPhotos) return "";
     if (p.image) return '<span class="thumb"><img src="' + esc(p.image) + '" alt="" loading="lazy"></span>';
     return '<span class="thumb" aria-hidden="true">' + esc((p.name || "?").charAt(0).toUpperCase()) + "</span>";
   }
 
-  function control(p) {
-    var line = state.cart[p.id];
-    if (p.stock <= 0) return '<button type="button" class="add-btn" disabled>Out</button>';
-    if (!line) return '<button type="button" class="add-btn" data-act="add" data-id="' + p.id + '">Add</button>';
-    return '<div class="stepper">' +
-      '<button type="button" data-act="dec" data-id="' + p.id + '" aria-label="Less">' + minusSvg + "</button>" +
-      '<input type="text" inputmode="decimal" data-act="qty" data-id="' + p.id + '" value="' + fmtQty(line.qty) + '" aria-label="Quantity">' +
-      '<button type="button" data-act="inc" data-id="' + p.id + '" aria-label="More">' + plusSvg + "</button></div>";
+  // The add options for one product (same buttons as the desktop product card)
+  function panel(p) {
+    var id = p.id;
+    if (p.unit === "kg") {
+      return '<div class="ppanel" hidden>' +
+        '<label class="pp-rate"><span>Rate (₹/' + esc(p.unit) + ')</span>' +
+          '<input type="text" inputmode="decimal" data-f="rate" placeholder="' + esc(fmtQty(p.price)) + '" aria-label="Rate for this bill"></label>' +
+        '<div class="pp-row pp-bags">' +
+          '<button type="button" class="pp-btn" data-add="one" data-id="' + id + '">+ 1 kg</button>' +
+          '<div class="bagstep"><button type="button" data-bag="-1" aria-label="Fewer bags">−</button>' +
+            '<input type="text" inputmode="numeric" data-f="bags" value="1" aria-label="Number of 30 kg bags">' +
+            '<button type="button" data-bag="1" aria-label="More bags">+</button></div>' +
+          '<button type="button" class="pp-btn pp-main" data-add="bag" data-id="' + id + '">× 30 kg Bag</button>' +
+        "</div>" +
+        '<div class="pp-row pp-custom">' +
+          '<button type="button" class="pp-btn" data-add="loose" data-id="' + id + '">Loose</button>' +
+          '<input type="text" inputmode="decimal" data-f="qty" placeholder="Qty" aria-label="Quantity">' +
+          '<button type="button" class="pp-btn pp-main" data-add="qty" data-id="' + id + '">Add</button>' +
+        "</div></div>";
+    }
+    return '<div class="ppanel" hidden>' +
+      '<div class="pp-row pp-custom pp-plain">' +
+        '<button type="button" class="pp-btn" data-add="one" data-id="' + id + '">+ 1</button>' +
+        '<input type="text" inputmode="decimal" data-f="qty" placeholder="Qty" aria-label="Quantity">' +
+        '<button type="button" class="pp-btn pp-main" data-add="qty" data-id="' + id + '">Add</button>' +
+      "</div></div>";
   }
 
   function row(p) {
     var gstTxt = GST_ENABLED && p.gst > 0 ? " · GST " + fmtQty(p.gst) + "%" : "";
-    var stock = p.stock <= 0
+    var out = p.stock <= 0;
+    var stock = out
       ? '<div class="pstock is-out">Out of stock</div>'
       : '<div class="pstock">' + fmtQty(p.stock) + " " + esc(p.unit) + " in stock</div>";
-    return '<div class="prow' + (p.stock <= 0 ? " is-out" : "") + '" data-row="' + p.id + '">' + thumb(p) +
-      '<div class="pinfo"><div class="pname">' + esc(p.name) + "</div>" +
-      '<div class="pmeta"><strong class="num">' + moneyShort(p.price) + "</strong> / " + esc(p.unit) + gstTxt + "</div>" +
-      stock + "</div>" + control(p) + "</div>";
+    return '<div class="prow-wrap' + (out ? " is-out" : "") + '" data-row="' + p.id + '">' +
+      '<div class="prow">' + thumb(p) +
+        '<div class="pinfo"' + (out ? "" : ' data-toggle="' + p.id + '"') + ">" +
+          '<div class="pname">' + esc(p.name) + "</div>" +
+          '<div class="pmeta"><strong class="num">' + moneyShort(p.price) + "</strong> / " + esc(p.unit) + gstTxt + "</div>" +
+          stock + '<div class="inbill" data-chip="' + p.id + '" hidden></div></div>' +
+        (out ? '<button type="button" class="add-btn" disabled>Out</button>'
+             : '<button type="button" class="add-btn" data-toggle="' + p.id + '" aria-expanded="false">Add</button>') +
+      "</div>" + (out ? "" : panel(p)) + "</div>";
   }
 
   function renderList() {
     var list = visibleProducts();
+    state.open = null;
     if (!list.length) {
       el.plist.innerHTML = '<div class="empty"><strong>No products found</strong>' +
         (state.q ? "Nothing matches “" + esc(state.q) + "”." : "There are no products here yet.") + "</div>";
       return;
     }
     el.plist.innerHTML = list.map(row).join("");
+    updateChips();
   }
 
-  function renderRow(id) {
-    var node = el.plist.querySelector('[data-row="' + id + '"]');
+  // "In bill: 60 kg (2 bags) · 5 kg loose" under each product
+  function chipText(id) {
+    var p = state.byId[id], pack = state.cart[keyOf(id, false)], loose = state.cart[keyOf(id, true)], parts = [];
+    if (pack) {
+      var bags = isBagLine(p, pack) ? " (" + fmtQty(pack.qty / 30) + (pack.qty === 30 ? " bag)" : " bags)") : "";
+      parts.push(fmtQty(pack.qty) + " " + p.unit + bags);
+    }
+    if (loose) parts.push(fmtQty(loose.qty) + " " + p.unit + " loose");
+    return parts.length ? "In bill: " + parts.join(" · ") : "";
+  }
+  function updateChip(id) {
+    var node = el.plist.querySelector('[data-chip="' + id + '"]');
     if (!node) return;
-    blurInside(node);
-    node.outerHTML = row(state.byId[id]);
+    var text = chipText(id);
+    node.textContent = text;
+    node.hidden = !text;
+  }
+  function updateChips() {
+    Array.prototype.forEach.call(el.plist.querySelectorAll("[data-chip]"), function (n) { updateChip(Number(n.dataset.chip)); });
   }
 
   function renderChips() {
@@ -153,55 +207,99 @@
       }).join("");
   }
 
-  var plusSvg = '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>';
   var minusSvg = '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>';
+  var plusSvg = '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>';
   var trashSvg = '<svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
-  // ── Cart changes ─────────────────────────────────────────────────────
-  // `soft` = the change came from typing in a box that is still focused: update numbers in
-  // place instead of redrawing, so the keyboard and cursor are never disturbed.
-  function setQty(id, qty, fromReview, soft) {
+  // ── Adding to the bill (same as the desktop screen) ──────────────────
+  function addToBill(id, qty, opts) {
     var p = state.byId[id];
-    if (!p) return;
-    qty = Math.round(qty * 1000) / 1000;
-    if (!(qty > 0)) {
-      if (fromReview) { IG.toast("Use the bin to remove an item"); renderLines(); return; }
-      delete state.cart[id];
-    } else if (state.cart[id]) {
-      state.cart[id].qty = qty;
+    if (!p || !(qty > 0)) return;
+    opts = opts || {};
+    var k = keyOf(id, !!opts.loose), line = state.cart[k];
+    if (line) {
+      line.qty = round3(line.qty + qty);
+      if (opts.price > 0) line.price = opts.price;
     } else {
-      state.cart[id] = { id: id, qty: qty, price: p.price, loose: false };
+      state.cart[k] = { key: k, id: id, qty: round3(qty), price: opts.price > 0 ? opts.price : p.price, loose: !!opts.loose };
     }
-    afterCartChange(id, soft);
-  }
-
-  function blurInside(node) {
-    if (node && document.activeElement && node.contains(document.activeElement)) document.activeElement.blur();
-  }
-
-  function afterCartChange(id, soft) {
     persist();
-    if (id != null && !(soft && state.cart[id] && !el.sheet.classList.contains("is-open"))) renderRow(id);
+    updateChip(id);
     updateCartBar();
-    if (el.sheet.classList.contains("is-open")) {
-      if (!Object.keys(state.cart).length) { closeSheet(); return; }
-      if (soft) refreshLine(id); else { blurInside(el.lines); renderLines(); }
-      renderTotals();
-    }
+    IG.toast("+" + fmtQty(qty) + " " + p.unit + (opts.loose ? " loose" : "") + " · " + p.name);
   }
 
-  // Update one line's total and notes without touching its inputs.
-  function refreshLine(id) {
-    var line = state.cart[id];
-    if (!line) { renderLines(); return; }
-    var totalEl = el.lines.querySelector('[data-total="' + id + '"]');
-    if (totalEl) totalEl.textContent = money(round2(line.qty * line.price));
-    var extra = el.lines.querySelector('[data-extra="' + id + '"]');
-    if (!extra) return;
-    // Rewriting identical notes would replace a button the finger is already pressing (the tap would be lost).
-    var html = noteHtml(id);
-    if (extra._last !== html) { extra.innerHTML = html; extra._last = html; }
+  function togglePanel(id) {
+    var wrap = el.plist.querySelector('[data-row="' + id + '"]');
+    if (!wrap) return;
+    var opening = state.open !== id;
+    if (state.open != null) closePanel(state.open);
+    if (!opening) return;
+    state.open = id;
+    wrap.classList.add("is-open");
+    wrap.querySelector(".ppanel").hidden = false;
+    var btn = wrap.querySelector(".add-btn");
+    btn.textContent = "Done"; btn.setAttribute("aria-expanded", "true");
+    if (wrap.scrollIntoView) wrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
+  function closePanel(id) {
+    var wrap = el.plist.querySelector('[data-row="' + id + '"]');
+    if (wrap) {
+      wrap.classList.remove("is-open");
+      wrap.querySelector(".ppanel").hidden = true;
+      var btn = wrap.querySelector(".add-btn");
+      btn.textContent = "Add"; btn.setAttribute("aria-expanded", "false");
+    }
+    if (state.open === id) state.open = null;
+  }
+
+  function fromPanel(btn) {
+    var wrap = btn.closest("[data-row]");
+    var id = Number(btn.dataset.id), what = btn.dataset.add;
+    var rateEl = wrap.querySelector('[data-f="rate"]'), qtyEl = wrap.querySelector('[data-f="qty"]'), bagsEl = wrap.querySelector('[data-f="bags"]');
+    var rate = rateEl ? num(rateEl.value) : 0;
+    var opts = rate > 0 ? { price: rate } : {};
+
+    if (what === "one") { addToBill(id, 1, opts); return; }
+    if (what === "bag") {
+      var bags = parseInt(bagsEl.value, 10);
+      if (!(bags >= 1)) { bags = 1; bagsEl.value = "1"; }
+      addToBill(id, 30 * bags, opts);
+      return;
+    }
+    var qty = num(qtyEl.value);
+    if (!(qty > 0)) { IG.toast("Enter a valid quantity"); qtyEl.focus(); return; }
+    opts.loose = what === "loose";
+    addToBill(id, qty, opts);
+    qtyEl.value = "";
+  }
+
+  el.plist.addEventListener("click", function (e) {
+    var toggle = e.target.closest("[data-toggle]");
+    if (toggle) { togglePanel(Number(toggle.dataset.toggle)); return; }
+    var add = e.target.closest("[data-add]");
+    if (add) { fromPanel(add); return; }
+    var bag = e.target.closest("[data-bag]");
+    if (bag) {
+      var input = bag.parentNode.querySelector('[data-f="bags"]');
+      input.value = String(Math.max(1, (parseInt(input.value, 10) || 1) + Number(bag.dataset.bag)));
+    }
+  });
+  el.plist.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || !e.target.matches('[data-f="qty"]')) return;
+    e.preventDefault();
+    var btn = e.target.closest(".ppanel").querySelector('[data-add="qty"]');
+    if (btn) fromPanel(btn);
+  });
+  el.plist.addEventListener("focusin", function (e) {
+    if (e.target.matches("[data-f]")) e.target.select();
+  });
+  el.plist.addEventListener("input", function (e) {
+    if (e.target.matches('[data-f="bags"]')) {
+      var v = e.target.value.replace(/\D/g, "");
+      if (e.target.value !== v) e.target.value = v;
+    }
+  });
 
   function updateCartBar() {
     var c = calc();
@@ -210,26 +308,6 @@
     el.cartCount.textContent = c.count + (c.count === 1 ? " item" : " items");
     el.cartTotal.textContent = money(c.grand);
   }
-
-  // Product list events (one handler for every row)
-  el.plist.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-act]");
-    if (!btn || btn.tagName === "INPUT") return;
-    var id = Number(btn.dataset.id), act = btn.dataset.act, line = state.cart[id];
-    if (act === "add") setQty(id, 1);
-    else if (act === "inc") setQty(id, (line ? line.qty : 0) + 1);
-    else if (act === "dec") setQty(id, (line ? line.qty : 1) - 1);
-  });
-  el.plist.addEventListener("change", function (e) {
-    var input = e.target.closest('input[data-act="qty"]');
-    if (!input) return;
-    var qty = parseFloat(input.value.replace(",", "."));
-    if (qty > 0) input.value = fmtQty(Math.round(qty * 1000) / 1000);   // tidy in place; buttons stay put
-    setQty(Number(input.dataset.id), qty, false, qty > 0);
-  });
-  el.plist.addEventListener("focusin", function (e) {
-    if (e.target.matches('input[data-act="qty"]')) e.target.select();
-  });
 
   // Search and categories
   el.q.addEventListener("input", function () {
@@ -249,6 +327,7 @@
 
   // ── Review sheet ─────────────────────────────────────────────────────
   function openSheet() {
+    IG.hideToast();
     el.sheet.classList.add("is-open");
     document.body.style.overflow = "hidden";
     if (!(history.state && history.state.sheet)) history.pushState({ sheet: 1 }, "", "#review");
@@ -273,85 +352,137 @@
     state.discAmt = ""; state.notes = ""; state.officer = ""; state.pay = "cash"; state.discType = "flat";
     clearSaved();
     syncForm();
-    renderList(); updateCartBar(); closeSheet();
+    updateChips(); updateCartBar(); closeSheet();
   });
 
-  function noteHtml(id) {
-    var line = state.cart[id], p = state.byId[id];
+  function blurInside(node) {
+    if (node && document.activeElement && node.contains(document.activeElement)) document.activeElement.blur();
+  }
+
+  function noteHtml(key) {
+    var line = state.cart[key], p = line && state.byId[line.id];
     if (!line || !p) return "";
-    if (line.qty > p.stock) {
-      return '<div class="line-note is-warn"><span>Only ' + fmtQty(p.stock) + " " + esc(p.unit) + " in stock</span></div>";
+    var inBill = qtyInBill(p.id);
+    if (inBill > p.stock) {
+      return '<div class="line-note is-warn"><span>Only ' + fmtQty(p.stock) + " " + esc(p.unit) + " in stock (" + fmtQty(inBill) + " on this bill)</span></div>";
     }
-    if (GST_ENABLED && p.gst > 0 && p.unit === "kg" && line.qty >= 30 && line.qty % 30 === 0) {
-      return '<div class="line-note"><span>' + (line.loose ? "Loose — GST charged" : "30 kg bag — no GST") + "</span>" +
-        '<button type="button" class="mini-toggle" data-act="loose" data-id="' + id + '">' + (line.loose ? "Treat as bag" : "Charge GST (loose)") + "</button></div>";
+    if (GST_ENABLED && p.gst > 0 && p.unit === "kg") {
+      if (line.loose) return '<div class="line-note"><span>Loose — GST charged</span></div>';
+      if (isBagLine(p, line)) return '<div class="line-note"><span>30 kg bags — no GST</span></div>';
     }
     return "";
   }
 
-  function lineHtml(id) {
-    var line = state.cart[id], p = state.byId[id];
-    var bag = isBag(p, line);
-    var sub = "Sold per " + esc(p.unit) + (GST_ENABLED && p.gst > 0 ? " · GST " + (bag ? "0" : fmtQty(p.gst)) + "%" : "");
-    return '<div class="line" data-line="' + id + '">' +
-      '<div class="line-top"><div><div class="line-name">' + esc(p.name) + '</div><div class="line-sub">' + sub + "</div></div>" +
-      '<div class="line-total num" data-total="' + id + '">' + money(round2(line.qty * line.price)) + "</div></div>" +
+  function lineHtml(key) {
+    var line = state.cart[key], p = state.byId[line.id];
+    var bag = isBagLine(p, line);
+    var rateText = bag ? "0" : fmtQty(p.gst);
+    var sub = "Sold per " + esc(p.unit) + (GST_ENABLED && p.gst > 0 ? " · GST " + rateText + "%" : "");
+    var bagsText = bag ? " · " + fmtQty(line.qty / 30) + (line.qty === 30 ? " bag" : " bags") : "";
+    var qtyLabel = "Quantity (" + esc(p.unit) + ")" + bagsText;
+    var qtyValue = fmtQty(line.qty);
+    return '<div class="line" data-line="' + key + '" data-bag="' + (bag ? "1" : "0") + '">' +
+      '<div class="line-top"><div><div class="line-name">' + esc(p.name) + (line.loose ? ' <span class="loose-tag">Loose</span>' : "") +
+        '</div><div class="line-sub">' + sub + "</div></div>" +
+      '<div class="line-total num" data-total="' + key + '">' + money(round2(line.qty * line.price)) + "</div></div>" +
       '<div class="line-controls">' +
-        '<div><span class="rate-label">Quantity</span><div class="stepper">' +
-          '<button type="button" data-act="dec" data-id="' + id + '" aria-label="Less">' + minusSvg + "</button>" +
-          '<input type="text" inputmode="decimal" data-act="qty" data-id="' + id + '" value="' + fmtQty(line.qty) + '" aria-label="Quantity">' +
-          '<button type="button" data-act="inc" data-id="' + id + '" aria-label="More">' + plusSvg + "</button></div></div>" +
+        '<div><span class="rate-label" data-qlabel="' + key + '">' + qtyLabel + '</span><div class="stepper">' +
+          '<button type="button" data-act="dec" data-key="' + key + '" aria-label="Less">' + minusSvg + "</button>" +
+          '<input type="text" inputmode="decimal" data-act="qty" data-key="' + key + '" value="' + qtyValue + '" aria-label="Quantity">' +
+          '<button type="button" data-act="inc" data-key="' + key + '" aria-label="More">' + plusSvg + "</button></div></div>" +
         '<div><span class="rate-label">Rate per ' + esc(p.unit) + '</span><div class="rate-field"><span>₹</span>' +
-          '<input type="text" inputmode="decimal" data-act="rate" data-id="' + id + '" value="' + fmtQty(line.price) + '" aria-label="Rate"></div></div>' +
-        '<button type="button" class="icon-btn line-remove" data-act="remove" data-id="' + id + '" aria-label="Remove ' + esc(p.name) + '">' + trashSvg + "</button>" +
-      '</div><div class="line-extra" data-extra="' + id + '">' + noteHtml(id) + "</div></div>";
+          '<input type="text" inputmode="decimal" data-act="rate" data-key="' + key + '" value="' + fmtQty(line.price) + '" aria-label="Rate"></div></div>' +
+        '<button type="button" class="icon-btn line-remove" data-act="remove" data-key="' + key + '" aria-label="Remove ' + esc(p.name) + '">' + trashSvg + "</button>" +
+      '</div><div class="line-extra" data-extra="' + key + '">' + noteHtml(key) + "</div></div>";
   }
 
   function renderLines() {
-    var ids = Object.keys(state.cart);
-    el.lines.innerHTML = ids.length ? ids.map(lineHtml).join("") : '<div class="empty">No items yet.</div>';
+    var keys = Object.keys(state.cart);
+    el.lines.innerHTML = keys.length ? keys.map(lineHtml).join("") : '<div class="empty">No items yet.</div>';
     Array.prototype.forEach.call(el.lines.querySelectorAll("[data-extra]"), function (node) {
-      node._last = noteHtml(Number(node.dataset.extra));
+      node._last = noteHtml(node.dataset.extra);
     });
+  }
+
+  // Update one line's total and notes without touching its inputs (keeps the keyboard open).
+  function refreshLine(key) {
+    var line = state.cart[key];
+    if (!line) { renderLines(); return; }
+    var totalEl = el.lines.querySelector('[data-total="' + key + '"]');
+    if (totalEl) totalEl.textContent = money(round2(line.qty * line.price));
+    // A line's own stock note can change when its twin (normal/loose) changes, so refresh both.
+    [keyOf(line.id, false), keyOf(line.id, true)].forEach(function (k) {
+      var extra = el.lines.querySelector('[data-extra="' + k + '"]');
+      if (!extra) return;
+      // Rewriting identical notes would replace a button the finger is already pressing.
+      var html = noteHtml(k);
+      if (extra._last !== html) { extra.innerHTML = html; extra._last = html; }
+    });
+  }
+
+  function afterLineChange(key, soft) {
+    persist();
+    var line = state.cart[key];
+    if (line) updateChip(line.id);
+    updateCartBar();
+    if (!Object.keys(state.cart).length) { closeSheet(); return; }
+    if (soft && line) refreshLine(key); else { blurInside(el.lines); renderLines(); }
+    renderTotals();
+  }
+
+  // The box always means the product's unit (kg). The + and - buttons move a whole 30 kg bag on bag lines.
+  function setLineQty(key, qty, soft) {
+    var line = state.cart[key];
+    if (!line) return;
+    var p = state.byId[line.id];
+    // What the line on screen currently says (typing may already have changed the quantity underneath it).
+    var node = el.lines.querySelector('[data-line="' + key + '"]');
+    var shownAsBag = node ? node.dataset.bag === "1" : null;
+    qty = round3(qty);
+    if (!(qty > 0)) { IG.toast("Use the bin to remove an item"); renderLines(); return; }
+    line.qty = qty;
+    // Crossing into or out of a 30 kg multiple changes the label and the GST note, so redraw the line.
+    afterLineChange(key, soft && shownAsBag === isBagLine(p, line));
   }
 
   el.lines.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-act]");
     if (!btn || btn.tagName === "INPUT") return;
-    var id = Number(btn.dataset.id), line = state.cart[id], act = btn.dataset.act;
+    var key = btn.dataset.key, line = state.cart[key], act = btn.dataset.act;
     if (!line) return;
-    if (act === "inc") setQty(id, line.qty + 1, true);
-    else if (act === "dec") setQty(id, line.qty - 1, true);
-    else if (act === "remove") { delete state.cart[id]; afterCartChange(id); }
-    else if (act === "loose") { line.loose = !line.loose; afterCartChange(id); }
+    var step = isBagLine(state.byId[line.id], line) ? 30 : 1;
+    if (act === "inc") setLineQty(key, line.qty + step, false);
+    else if (act === "dec") setLineQty(key, line.qty - step, false);
+    else if (act === "remove") { delete state.cart[key]; afterLineChange(key, false); }
   });
   el.lines.addEventListener("change", function (e) {
     var input = e.target.closest("input[data-act]");
     if (!input) return;
-    var id = Number(input.dataset.id), line = state.cart[id];
+    var key = input.dataset.key, line = state.cart[key];
     if (!line) return;
-    var value = parseFloat(String(input.value).replace(",", "."));
+    var value = num(input.value);
     if (input.dataset.act === "qty") {
-      if (value > 0) { input.value = fmtQty(Math.round(value * 1000) / 1000); setQty(id, value, true, true); }
+      if (value > 0) setLineQty(key, value, true);
       else { input.value = fmtQty(line.qty); IG.toast("Use the bin to remove an item"); }
     } else if (input.dataset.act === "rate") {
-      if (value > 0) { line.price = Math.round(value * 100) / 100; afterCartChange(id, true); }
+      if (value > 0) { line.price = Math.round(value * 100) / 100; afterLineChange(key, true); }
       else { input.value = fmtQty(line.price); }
     }
   });
   el.lines.addEventListener("focusin", function (e) {
     if (e.target.matches("input[data-act]")) e.target.select();
   });
-  // Update the line total and summary while typing, without redrawing (keeps the keyboard open).
+  // Totals follow what is being typed, without redrawing.
   el.lines.addEventListener("input", function (e) {
     var input = e.target.closest("input[data-act]");
     if (!input) return;
-    var id = Number(input.dataset.id), line = state.cart[id];
-    var value = parseFloat(String(input.value).replace(",", "."));
+    var key = input.dataset.key, line = state.cart[key];
+    var value = num(input.value);
     if (!line || !(value > 0)) return;
-    if (input.dataset.act === "qty") line.qty = value; else line.price = value;
-    refreshLine(id);
-    persist(); updateCartBar(); renderTotals();
+    if (input.dataset.act === "qty") line.qty = round3(value);
+    else line.price = value;
+    refreshLine(key);
+    persist(); updateChip(line.id); updateCartBar(); renderTotals();
   });
 
   function renderTotals() {
@@ -405,8 +536,7 @@
   function updatePhoneTick() { el.phoneWrap.classList.toggle("is-valid", phoneOk(state.buyer.phone)); }
 
   function onBuyerType() {
-    var picked = state.buyer.id;
-    if (picked && state.buyer.phone !== state.buyer.pickedPhone) state.buyer.id = null;
+    if (state.buyer.id && state.buyer.phone !== state.buyer.pickedPhone) state.buyer.id = null;
     persist(); updatePhoneTick();
     clearTimeout(suggestTimer);
     suggestTimer = setTimeout(loadSuggestions, 220);
@@ -436,7 +566,7 @@
     var q = state.buyer.phone.length >= 3 ? state.buyer.phone : (state.buyer.name.trim().length >= 2 ? state.buyer.name.trim() : "");
     if (state.buyer.id && !q) { el.suggest.hidden = true; return; }
     IG.api(root.dataset.customers + "?q=" + encodeURIComponent(q)).then(function (rows) {
-      if (!rows.length || phoneOk(state.buyer.phone) && state.buyer.id) { el.suggest.hidden = true; return; }
+      if (!rows.length || (phoneOk(state.buyer.phone) && state.buyer.id)) { el.suggest.hidden = true; return; }
       el.suggest.innerHTML = '<div class="suggest-head">' + (q ? "Matching buyers" : "Recent buyers") + "</div>" +
         rows.map(function (c) {
           return '<button type="button" data-id="' + c.id + '" data-name="' + esc(c.name) + '" data-phone="' + esc(c.phone) + '">' +
@@ -469,7 +599,7 @@
     var c = calc();
     if (!c.count) return showError("Add at least one item.");
     if (c.grand <= 0) return showError("The total must be more than zero.");
-    var over = Object.keys(state.cart).filter(function (id) { return state.cart[id].qty > state.byId[id].stock; });
+    var over = state.products.filter(function (p) { return qtyInBill(p.id) > p.stock; });
     if (over.length) return showError("Some items are more than the stock available. Reduce the quantity.");
     if (state.buyer.phone && !phoneOk(state.buyer.phone)) return showError("Enter the buyer's 10-digit mobile number, or leave it empty.");
 
@@ -480,9 +610,9 @@
     IG.api(root.dataset.save, {
       method: "POST",
       body: {
-        items: Object.keys(state.cart).map(function (id) {
-          var l = state.cart[id];
-          return { product_id: Number(id), qty: l.qty, unit_price: l.price, is_loose: !!l.loose };
+        items: Object.keys(state.cart).map(function (k) {
+          var l = state.cart[k];
+          return { product_id: l.id, qty: l.qty, unit_price: l.price, is_loose: !!l.loose };
         }),
         buyer: { id: state.buyer.id, name: state.buyer.name.trim(), phone: state.buyer.phone },
         payment_mode: state.pay,

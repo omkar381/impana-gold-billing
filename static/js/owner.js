@@ -30,6 +30,7 @@
 
   var toastEl = document.getElementById("toast");
   var toastTimer;
+  IG.hideToast = function () { if (toastEl) toastEl.classList.remove("is-on"); };
   IG.toast = function (message) {
     if (!toastEl) return;
     toastEl.textContent = message;

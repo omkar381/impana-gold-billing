@@ -392,3 +392,31 @@ def test_desktop_print_and_pdf_pages_still_render(admin_client, app):
     html = admin_client.get(f"/bill/{bill_id}/print").data.decode()
     assert "ORIGINAL" in html and "DUPLICATE" in html and "Print Invoice" in html   # both copies, staff buttons
     assert 'content="width=device-width, initial-scale=1"' in html
+
+
+def test_bag_line_and_loose_line_of_the_same_product_on_one_bill(phone, app):
+    """Like the desktop: 60 kg of bags (no GST) plus 5 kg loose (GST charged) as two lines."""
+    rava = pid(app, "RAVA")
+    r = phone.post("/b/api/bills", json=bill_body(app, items=[
+        {"product_id": rava, "qty": 60, "unit_price": 50, "is_loose": False},
+        {"product_id": rava, "qty": 5, "unit_price": 50, "is_loose": True},
+    ]))
+    assert r.status_code == 200, r.get_json()
+    with app.app_context():
+        b = db.session.get(Bill, r.get_json()["id"])
+        bag, loose = sorted(b.items, key=lambda i: i.qty, reverse=True)
+        assert (bag.qty, bag.gst_rate, bag.line_total) == (Decimal("60.000"), Decimal("0.00"), Decimal("3000.00"))
+        assert loose.product_name.endswith("(Loose)") and loose.gst_rate == Decimal("5.00")
+        assert b.gst_amount == Decimal("12.50")            # 5% of 250 only
+        assert b.grand_total == Decimal("3262.50")
+        assert Product.query.filter_by(sku="RAVA").first().stock_qty == Decimal("435.000")
+
+
+def test_two_lines_together_cannot_exceed_stock(phone, app):
+    rava = pid(app, "RAVA")
+    r = phone.post("/b/api/bills", json=bill_body(app, items=[
+        {"product_id": rava, "qty": 300, "unit_price": 50}, {"product_id": rava, "qty": 250, "unit_price": 50, "is_loose": True},
+    ]))
+    assert r.status_code == 400 and "Insufficient stock" in r.get_json()["error"]
+    with app.app_context():
+        assert Product.query.filter_by(sku="RAVA").first().stock_qty == Decimal("500.000")  # nothing was deducted
